@@ -1,4 +1,4 @@
-name = "rudl-dl-v2"
+﻿name = "rudl-dl-v2"
 compatibility_date = "2025-10-03"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
@@ -14,10 +14,5 @@ migrations_dir = "migrations"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "dataruapp-files"
+bucket_name = "mycowbay-files"
 
-# Email sending now handled via MailChannels HTTP API (see README / env vars)
-# Configure an Email (send) binding to enable verification emails
-# [[email]]
-# binding = "EMAIL"
-# type = "send"

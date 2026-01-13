@@ -1,4 +1,4 @@
-# RU Server Stack
+﻿# RU Server Stack
 
 This folder is a 1:1 copy of the CN server stack and can be deployed to your Russia-based VM that is managed through aaPanel. It exposes the same `/d/:code`, `/dl/:code`, and `/m/:code` routes as the global worker, but stores binaries locally and talks back to the main app to keep download statistics and billing in sync.
 
@@ -6,15 +6,15 @@ This folder is a 1:1 copy of the CN server stack and can be deployed to your Rus
 
 - Node.js 18 or newer (provides the built‑in `fetch` API).
 - Shared secret that matches the main app’s `RU_SERVER_API_TOKEN`.
-- Public HTTPS domain, e.g. `https://ru-d.dataruapp.com`, pointing to the Nginx reverse proxy.
+- Public HTTPS domain, e.g. `https://ru-d.mycowbay.com`, pointing to the Nginx reverse proxy.
 
-For a Russian deployment change the public hostname (e.g. `https://ru-d.dataruapp.com`) and tokens to the RU-specific values that you configure in the main app.
+For a Russian deployment change the public hostname (e.g. `https://ru-d.mycowbay.com`) and tokens to the RU-specific values that you configure in the main app.
 
 ## DNS & TLS setup
 
-1. 在你的 DNS 供應商（例如 Cloudflare、阿里雲、Namecheap 等）建立 `ru-d.dataruapp.com` 的 `A` 記錄，指向俄羅斯主機的公網 IP，TTL 可保持預設。
-2. 等待記錄傳播後，用 `dig ru-d.dataruapp.com` 或 `nslookup` 確認已解析到該 IP。
-3. 使用 aaPanel 內建的 SSL 發證、或直接執行 `certbot certonly --nginx -d ru-d.dataruapp.com` 簽發憑證。`nginx/nginx.conf` 預設使用 `/etc/letsencrypt/live/ru-d.dataruapp.com/fullchain.pem` 與 `.../privkey.pem`，若你將憑證放在其他路徑，記得同步更新檔案並重新載入 Nginx。
+1. 在你的 DNS 供應商（例如 Cloudflare、阿里雲、Namecheap 等）建立 `ru-d.mycowbay.com` 的 `A` 記錄，指向俄羅斯主機的公網 IP，TTL 可保持預設。
+2. 等待記錄傳播後，用 `dig ru-d.mycowbay.com` 或 `nslookup` 確認已解析到該 IP。
+3. 使用 aaPanel 內建的 SSL 發證、或直接執行 `certbot certonly --nginx -d ru-d.mycowbay.com` 簽發憑證。`nginx/nginx.conf` 預設使用 `/etc/letsencrypt/live/ru-d.mycowbay.com/fullchain.pem` 與 `.../privkey.pem`，若你將憑證放在其他路徑，記得同步更新檔案並重新載入 Nginx。
 
 ## Environment variables
 
@@ -23,16 +23,16 @@ Copy `.env.example` to `.env` and fill the values:
 | Key | Description |
 | --- | --- |
 | `PORT` | Port for the Node process (default `4000`). |
-| `PUBLIC_BASE_URL` | External URL (e.g. `https://ru-d.dataruapp.com`). Used when generating manifests and redirects. |
+| `PUBLIC_BASE_URL` | External URL (e.g. `https://ru-d.mycowbay.com`). Used when generating manifests and redirects. |
 | `STORAGE_ROOT` | Absolute/relative path for persisted binaries and metadata. |
 | `ADMIN_API_TOKEN` | Shared token that the main app uses when calling `/api/uploads/*` and `/api/links/*`. Must match `RU_SERVER_API_TOKEN` in the Next.js app. |
-| `NEXT_API_BASE` | Base URL of the main app (`https://app.dataruapp.com`). |
+| `NEXT_API_BASE` | Base URL of the main app (`https://app.mycowbay.com`). |
 | `NEXT_API_TOKEN` | Token used when reporting downloads back to `/api/cn/download`. Use the same value as `ADMIN_API_TOKEN`. |
 
 The same keys are reused for the RU server—if you need a separate token pair create `RU_SERVER_API_TOKEN` in the Next.js app and set both `ADMIN_API_TOKEN` and `NEXT_API_TOKEN` to that value here.  
 In the Next.js (Cloudflare Pages) project set the following environment variables so the app can talk to this host without touching the CN-specific settings:
 
-- `RU_SERVER_API_BASE` → public HTTPS endpoint of this RU host (e.g. `https://ru-d.dataruapp.com`).
+- `RU_SERVER_API_BASE` → public HTTPS endpoint of this RU host (e.g. `https://ru-d.mycowbay.com`).
 - `RU_SERVER_API_TOKEN` → must match `ADMIN_API_TOKEN` above.
 - `RU_DOWNLOAD_BASE_URL` → same as `PUBLIC_BASE_URL` for this host.
 - `NEXT_PUBLIC_RU_DOWNLOAD_DOMAIN` → value used in the dashboard UI when generating RU download links.
@@ -101,3 +101,4 @@ The JSON metadata matches the payload written by `links/publish`. The Node rende
 5. Point your Russian domain (or internal-only host) to the machine’s public IP and open the required ports (default `8080` for Nginx, `4000` for the Node app if you expose it).
 
 If aaPanel cannot run Docker on that VM, run the Node server directly with `npm run dev`/`npm run start` inside `RU-Server/server`, and use aaPanel’s built-in Nginx to replicate the proxy rules defined in `nginx/nginx.conf`.
+

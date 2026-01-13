@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 export const runtime = 'edge';
 
 import Link from 'next/link';
@@ -95,7 +95,7 @@ export default function LoginPage() {
       <div className="flex items-center gap-3 border-b border-neutral-700 pb-4">
         <Image
           src="/images/icon.png"
-          alt="DataruApp icon"
+          alt="mycowbay icon"
           width={48}
           height={48}
           className="h-12 w-12"
@@ -151,3 +151,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

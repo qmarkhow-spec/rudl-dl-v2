@@ -1,4 +1,4 @@
-# rudl-dl-v2
+﻿# rudl-dl-v2
 
 Next.js 15 + React 19 application prepared for Cloudflare Pages (Next on Pages). The app serves localized dashboards and API routes backed by a Cloudflare D1 database and files distributed through an R2-backed CDN.
 
@@ -45,7 +45,7 @@ This path is useful when testing before pushing to Git or when you need an immed
 
 ## Troubleshooting
 - Missing D1 binding: API routes and server components return HTTP 500 with "D1 binding DB is missing". Ensure the Pages project exposes the binding as `DB` (or temporarily keep `rudl-app` while migrating).
-- CDN assets: downloads redirect to `https://cdn.dataruapp.com/<key>`. Confirm that key exists in R2 and the CDN exposes it publicly.
+- CDN assets: downloads redirect to `https://cdn.mycowbay.com/<key>`. Confirm that key exists in R2 and the CDN exposes it publicly.
 - Locales: middleware redirects to `/en` or `/zh-TW`. Add languages under `src/i18n/messages` and update `src/i18n/locales.ts` for extra locales.
 
 ## Useful scripts
@@ -53,3 +53,4 @@ This path is useful when testing before pushing to Git or when you need an immed
 - `npm run build` - standard Next build (useful for linting/diagnostics).
 - `npm run cf:build` - build for Cloudflare Pages using `@cloudflare/next-on-pages`.
 - `npm run cf:deploy` - build + deploy to the configured Cloudflare Pages project.
+

@@ -4,7 +4,7 @@ type Dict = Record<string, string>;
 // 0
 const en: Dict = {
   'action.download': 'Download',
-  'app.name': 'DataruApp',
+  'app.name': 'mycowbay',
   'auth.email': 'Email',
   'auth.login.submit': 'Sign in',
   'auth.login.success': 'Login success',
@@ -88,9 +88,9 @@ const en: Dict = {
   'env.nextReact': 'Next.js 15 + React 19 (App Router)',
   'env.r2Cdn': 'R2 via CDN: ',
   'home.desc': 'Run enterprise downloads from a single console: upload new builds, share links, and keep members informed.',
-  'home.title': 'Welcome to DataruApp V2',
+  'home.title': 'Welcome to mycowbay V2',
   'home.features.title': 'What you can do',
-  'home.features.desc': 'DataruApp centralizes the essentials for internal distribution and operations.',
+  'home.features.desc': 'mycowbay centralizes the essentials for internal distribution and operations.',
   'home.features.upload.title': 'Upload builds securely',
   'home.features.upload.desc': 'Store IPA / APK artifacts with metadata and version history in one workspace.',
   'home.features.manage.title': 'Manage download links',
@@ -571,9 +571,9 @@ const zhTW = makeLocaleDict('zh-TW', {
   'env.linksCount': 'D1 links 計數：',
   'env.r2Cdn': 'R2 CDN：',
   'home.desc': '在這裡管理企業分發：上傳新版、分享連結、掌握會員狀態。',
-  'home.title': '歡迎使用 DataruApp V2',
+  'home.title': '歡迎使用 mycowbay V2',
   'home.features.title': '您可以做什麼',
-  'home.features.desc': 'DataruApp 將分發與營運需要的功能集中在同一個主控台。',
+  'home.features.desc': 'mycowbay 將分發與營運需要的功能集中在同一個主控台。',
   'home.features.upload.title': '安全上傳套件',
   'home.features.upload.desc': '把 IPA / APK 與版本資訊存進同一個工作區，維持清楚的歷程。',
   'home.features.manage.title': '管理下載連結',
@@ -880,9 +880,9 @@ const zhTW = makeLocaleDict('zh-TW', {
 
 const zhCN = makeLocaleDict('zh-CN', {
   'home.desc': '在这里统筹企业分发：上传新版、分享链接、掌握会员动态。',
-  'home.title': '欢迎使用 DataruApp V2',
+  'home.title': '欢迎使用 mycowbay V2',
   'home.features.title': '你可以做什么',
-  'home.features.desc': 'DataruApp 把分发与运营所需的功能集中在同一个控制台。',
+  'home.features.desc': 'mycowbay 把分发与运营所需的功能集中在同一个控制台。',
   'home.features.upload.title': '安全上传安装包',
   'home.features.upload.desc': '将 IPA / APK 和版本信息存进同一工作区，保持清晰的脉络。',
   'home.features.manage.title': '管理下载链接',
@@ -1193,9 +1193,9 @@ const zhCN = makeLocaleDict('zh-CN', {
 
 const ru = makeLocaleDict('ru', {
   'home.desc': 'Управляйте корпоративным распространением в одном месте: загружайте билды, делитесь ссылками и держите участников в курсе.',
-  'home.title': 'Добро пожаловать в DataruApp V2',
+  'home.title': 'Добро пожаловать в mycowbay V2',
   'home.features.title': 'Что доступно на платформе',
-  'home.features.desc': 'DataruApp объединяет ключевые инструменты для внутреннего распространения приложений.',
+  'home.features.desc': 'mycowbay объединяет ключевые инструменты для внутреннего распространения приложений.',
   'home.features.upload.title': 'Безопасная загрузка билдов',
   'home.features.upload.desc': 'Храните IPA/APK и метаданные с историей версий в едином рабочем пространстве.',
   'home.features.manage.title': 'Управление ссылками',
@@ -1506,9 +1506,9 @@ const ru = makeLocaleDict('ru', {
 
 const vi = makeLocaleDict('vi', {
   'home.desc': 'Quản lý phân phối nội bộ trong một bảng điều khiển: tải bản build mới, chia sẻ liên kết và cập nhật thành viên.',
-  'home.title': 'Chào mừng đến với DataruApp V2',
+  'home.title': 'Chào mừng đến với mycowbay V2',
   'home.features.title': 'Bạn có thể làm gì',
-  'home.features.desc': 'DataruApp gom mọi công cụ cần thiết cho quy trình phân phối và vận hành.',
+  'home.features.desc': 'mycowbay gom mọi công cụ cần thiết cho quy trình phân phối và vận hành.',
   'home.features.upload.title': 'Tải bản build an toàn',
   'home.features.upload.desc': 'Lưu trữ IPA / APK cùng metadata và lịch sử phiên bản trong một workspace duy nhất.',
   'home.features.manage.title': 'Quản lý liên kết tải',
@@ -1828,5 +1828,6 @@ export const dictionaries = {
 export type Locale = keyof typeof dictionaries;
 
 export const DEFAULT_LOCALE: Locale = 'en';
+
 
 

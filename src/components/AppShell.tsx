@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { ReactNode, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -8,7 +8,7 @@ import type { Locale } from '@/i18n/dictionary';
 import LangNav from '@/components/LangNav';
 
 // Routes in this set use the minimal auth layout (no primary nav/footer).
-const AUTH_SEGMENTS = new Set(['login', 'register', 'email-verification']);
+const AUTH_SEGMENTS = new Set(['login', 'register']);
 
 function useIsAuthRoute() {
   const pathname = usePathname() ?? '';
@@ -61,7 +61,7 @@ export default function AppShell({
             <LangNav />
             <main>{children}</main>
             <footer className="mt-10 text-xs text-gray-500">
-              © {new Date().getFullYear()} DataruApp
+              © {new Date().getFullYear()} mycowbay
             </footer>
           </div>
         )}
@@ -69,3 +69,4 @@ export default function AppShell({
     </I18nProvider>
   );
 }
+

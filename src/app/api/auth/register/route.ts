@@ -3,11 +3,6 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { R2Bucket } from '@cloudflare/workers-types';
 import { encodePasswordRecord, hashPassword, randomSaltHex } from '@/lib/pw';
 import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
-import {
-  createEmailVerificationToken,
-  sendVerificationEmail,
-  EMAIL_VERIFICATION_TTL_SECONDS,
-} from '@/lib/email-verification';
 
 export const runtime = 'edge';
 // 0
@@ -15,12 +10,6 @@ type Env = {
   DB?: D1Database;
   ['rudl-app']?: D1Database;
   R2_BUCKET?: R2Bucket;
-  EMAIL_FROM?: string;
-  EMAIL_FROM_NAME?: string;
-  APP_BASE_URL?: string;
-  APP_NAME?: string;
-  MAILCHANNELS_API_KEY?: string;
-  MAILCHANNELS_API_BASE?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
 };
@@ -131,19 +120,6 @@ export async function POST(req: Request) {
 
     shouldRollback = true;
 
-    const { token, expiresAt, nextAllowedAt } = await createEmailVerificationToken(DB, id);
-    const url = new URL(req.url);
-    const baseUrl = (bindings.APP_BASE_URL ?? `${url.protocol}//${url.host}`).replace(/\/+$/, '');
-    const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
-
-    await sendVerificationEmail({
-      env: bindings,
-      to: normalizedEmail,
-      verificationUrl,
-      subject: `${bindings.APP_NAME ?? 'DataruApp'} - Email verification`,
-      appName: bindings.APP_NAME ?? 'DataruApp',
-    });
-
     await ensureUserBucketFolder(R2, id);
     shouldRollback = false;
     await sendTelegramRegistrationNotice(bindings, normalizedEmail);
@@ -151,11 +127,6 @@ export async function POST(req: Request) {
     const response = NextResponse.json({
       ok: true,
       user_id: id,
-      verification: {
-        expiresAt,
-        ttl: EMAIL_VERIFICATION_TTL_SECONDS,
-        nextAllowedAt,
-      },
     });
     response.cookies.set('uid', id, {
       httpOnly: true,

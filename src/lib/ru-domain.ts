@@ -1,4 +1,4 @@
-const DEFAULT_RU_DOWNLOAD_BASE = 'https://ru-d.dataruapp.com';
+﻿const DEFAULT_RU_DOWNLOAD_BASE = 'https://ru-d.mycowbay.com';
 
 export const normalizeRuDomain = (value: string | undefined | null) =>
   value?.trim().replace(/\/+$/, '') ?? '';
@@ -14,3 +14,4 @@ export const getPublicRuDownloadDomain = () => {
 };
 
 export { DEFAULT_RU_DOWNLOAD_BASE };
+

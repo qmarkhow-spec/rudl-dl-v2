@@ -14,7 +14,7 @@ type Env = {
 } & RegionalServerBindings;
 
 const DEFAULT_TITLE = 'App';
-const CDN_BASE = 'https://cdn.dataruapp.com/';
+const CDN_BASE = 'https://cdn.mycowbay.com/';
 
 export async function GET(
   _request: Request,

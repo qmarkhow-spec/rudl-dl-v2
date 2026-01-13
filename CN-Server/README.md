@@ -1,4 +1,4 @@
-# CN Server Stack
+﻿# CN Server Stack
 
 This folder contains everything that needs to be deployed to the China mainland server. It exposes the same `/d/:code`, `/dl/:code`, and `/m/:code` routes as the global worker, but stores binaries locally and talks back to the main app to keep download statistics and billing in sync.
 
@@ -6,7 +6,7 @@ This folder contains everything that needs to be deployed to the China mainland 
 
 - Node.js 18 or newer (provides the built‑in `fetch` API).
 - Shared secret that matches the main app’s `CN_SERVER_API_TOKEN`.
-- Public HTTPS domain, e.g. `https://cn-d.dataruapp.com`, pointing to the Nginx reverse proxy.
+- Public HTTPS domain, e.g. `https://cn-d.mycowbay.com`, pointing to the Nginx reverse proxy.
 
 ## Environment variables
 
@@ -15,10 +15,10 @@ Copy `.env.example` to `.env` and fill the values:
 | Key | Description |
 | --- | --- |
 | `PORT` | Port for the Node process (default `4000`). |
-| `PUBLIC_BASE_URL` | External URL (e.g. `https://cn-d.dataruapp.com`). Used when generating manifests and redirects. |
+| `PUBLIC_BASE_URL` | External URL (e.g. `https://cn-d.mycowbay.com`). Used when generating manifests and redirects. |
 | `STORAGE_ROOT` | Absolute/relative path for persisted binaries and metadata. |
 | `ADMIN_API_TOKEN` | Shared token that the main app uses when calling `/api/uploads/*` and `/api/links/*`. Must match `CN_SERVER_API_TOKEN` in the Next.js app. |
-| `NEXT_API_BASE` | Base URL of the main app (`https://app.dataruapp.com`). |
+| `NEXT_API_BASE` | Base URL of the main app (`https://app.mycowbay.com`). |
 | `NEXT_API_TOKEN` | Token used when reporting downloads back to `/api/cn/download`. Use the same value as `ADMIN_API_TOKEN`. |
 
 ## Run locally
@@ -75,3 +75,4 @@ storage/
 ```
 
 The JSON metadata matches the payload written by `links/publish`. The Node renderer reads these files to render localized pages without touching the global database.
+

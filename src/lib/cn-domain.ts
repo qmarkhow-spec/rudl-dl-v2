@@ -1,4 +1,4 @@
-const DEFAULT_CN_DOWNLOAD_BASE = 'https://cn-d.dataruapp.com';
+﻿const DEFAULT_CN_DOWNLOAD_BASE = 'https://cn-d.mycowbay.com';
 
 export const normalizeCnDomain = (value: string | undefined | null) =>
   value?.trim().replace(/\/+$/, '') ?? '';
@@ -14,3 +14,4 @@ export const getPublicCnDownloadDomain = () => {
 };
 
 export { DEFAULT_CN_DOWNLOAD_BASE };
+

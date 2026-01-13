@@ -16,7 +16,7 @@ type Env = {
   ['rudl-app']?: D1Database;
 } & RegionalServerBindings;
 
-const CDN_BASE = 'https://cdn.dataruapp.com/';
+const CDN_BASE = 'https://cdn.mycowbay.com/';
 
 export async function GET(
   request: Request,

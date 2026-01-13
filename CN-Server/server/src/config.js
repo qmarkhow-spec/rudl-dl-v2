@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 
@@ -10,10 +10,10 @@ const resolvePath = (input, fallback) => {
 
 const config = {
   port: Number(process.env.PORT ?? 4000),
-  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? 'https://cn-d.dataruapp.com').replace(/\/+$/, ''),
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? 'https://cn-d.mycowbay.com').replace(/\/+$/, ''),
   storageRoot: resolvePath(process.env.STORAGE_ROOT, path.join(ROOT_DIR, '..', 'storage')),
   adminToken: process.env.ADMIN_API_TOKEN ?? '',
-  nextApiBase: (process.env.NEXT_API_BASE ?? 'https://app.dataruapp.com').replace(/\/+$/, ''),
+  nextApiBase: (process.env.NEXT_API_BASE ?? 'https://app.mycowbay.com').replace(/\/+$/, ''),
   nextApiToken: process.env.NEXT_API_TOKEN ?? '',
 };
 
@@ -25,3 +25,4 @@ if (!config.nextApiToken) {
 }
 
 module.exports = config;
+

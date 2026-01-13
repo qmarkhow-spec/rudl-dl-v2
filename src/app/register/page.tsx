@@ -66,8 +66,7 @@ export default function RegisterPage() {
         const payload = json as { ok: boolean; error?: unknown };
         if (payload.ok) {
           setOut(t('auth.register.success') ?? 'Registered');
-          const base = localePrefix || '';
-          location.href = `${base}/email-verification`;
+          location.href = nextPath;
           return;
         }
         const message = typeof payload.error === 'string' ? payload.error : 'Register failed';

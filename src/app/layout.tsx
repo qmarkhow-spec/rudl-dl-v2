@@ -1,4 +1,4 @@
-import './globals.css';
+﻿import './globals.css';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import AppShell from '@/components/AppShell';
@@ -7,7 +7,7 @@ import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: 'DataruApp V2',
+  title: 'mycowbay V2',
   description: 'Next + Cloudflare Pages',
   icons: {
     icon: [
@@ -48,3 +48,4 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   );
 }
+

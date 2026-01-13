@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { fetchAdminUser } from '@/lib/admin';
-import { requireVerifiedUser } from '@/lib/require-verified-user';
 
 export const runtime = 'edge';
 
@@ -55,14 +54,6 @@ export default async function AdminProtectedLayout({ children, params }: LayoutP
     redirect(loginUrl);
   }
   const uid = rawUid;
-
-  await requireVerifiedUser({
-    DB,
-    uid,
-    locale,
-    currentPath,
-    loginRedirect: loginUrl,
-  });
 
   const adminUser = await fetchAdminUser(DB, uid);
   if (!adminUser) {

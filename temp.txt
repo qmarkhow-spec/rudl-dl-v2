@@ -1,4 +1,4 @@
-worker_processes auto;
+ï»¿worker_processes auto;
 
 events {
   worker_connections 1024;
@@ -11,30 +11,30 @@ http {
   sendfile        on;
   keepalive_timeout  65;
 
-  # ¥þ°ì¤W¶Ç¤j¤p­­¨î
+  # ï¿½ï¿½ï¿½ï¿½Wï¿½Ç¤jï¿½pï¿½ï¿½ï¿½ï¿½
   client_max_body_size 2g;
 
-  # «áºÝ app¡Gdocker-compose service ¦WºÙ
+  # ï¿½ï¿½ï¿½ appï¿½Gdocker-compose service ï¿½Wï¿½ï¿½
   upstream app_upstream {
     server app:4000;
   }
 
-  # HTTP 80¡G¥þ³¡¾É¨ì HTTPS
+  # HTTP 80ï¿½Gï¿½ï¿½ï¿½ï¿½ï¿½É¨ï¿½ HTTPS
   server {
     listen 80;
-    server_name ru-d.dataruapp.com;
+    server_name ru-d.mycowbay.com;
     return 301 https://$host$request_uri;
   }
 
-  # HTTPS 443 ¯u¥¿³B²z½Ð¨D
+  # HTTPS 443 ï¿½uï¿½ï¿½ï¿½Bï¿½zï¿½Ð¨D
   server {
     listen 443 ssl;
-    server_name ru-d.dataruapp.com;
+    server_name ru-d.mycowbay.com;
 
-    ssl_certificate     /etc/letsencrypt/live/ru-d.dataruapp.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/ru-d.dataruapp.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/ru-d.mycowbay.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ru-d.mycowbay.com/privkey.pem;
 
-    # °·±dÀË¬d
+    # ï¿½ï¿½ï¿½dï¿½Ë¬d
     location /healthz {
       proxy_pass http://app_upstream/healthz;
     }
@@ -61,7 +61,7 @@ http {
       proxy_set_header Host $host;
     }
 
-    # ÀRºAÀÉ®×¡]¤U¸ü¥Î¡^
+    # ï¿½Rï¿½Aï¿½É®×¡]ï¿½Uï¿½ï¿½ï¿½Î¡^
     location /files/ {
       alias /var/www/files/;
       add_header Access-Control-Allow-Origin *;
@@ -70,3 +70,4 @@ http {
     }
   }
 }
+
