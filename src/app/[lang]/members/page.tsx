@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 
-export const runtime = 'edge';
 
 type Params = { lang: string };
 

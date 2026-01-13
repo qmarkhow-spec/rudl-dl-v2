@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 
-export const runtime = 'edge';
 
 type PageParams = { lang: string };
 

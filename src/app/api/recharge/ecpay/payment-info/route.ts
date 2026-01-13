@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge';
 
 const parseForm = async (req: Request) => {
   const formData = await req.formData();

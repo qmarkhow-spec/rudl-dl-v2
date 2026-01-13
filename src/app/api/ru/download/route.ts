@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchDistributionById } from '@/lib/distribution';
 import { recordDownload, type DownloadTotals } from '@/lib/downloads';
 import { triggerDownloadMonitors } from '@/lib/monitor';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -27,7 +26,7 @@ const normalizePlatform = (value: string | null | undefined): 'apk' | 'ipa' | nu
 };
 
 export async function POST(req: Request) {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const authHeader = req.headers.get('authorization') ?? '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { R2Bucket } from '@cloudflare/workers-types';
 import { encodePasswordRecord, hashPassword, randomSaltHex } from '@/lib/pw';
 import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 
-export const runtime = 'edge';
 // 0
 type Env = {
   DB?: D1Database;
@@ -58,7 +57,7 @@ async function sendTelegramRegistrationNotice(env: Env, email: string) {
 }
 
 export async function POST(req: Request) {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;

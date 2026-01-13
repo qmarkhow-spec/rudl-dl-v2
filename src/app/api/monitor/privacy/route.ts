@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchTelegramSettings, updateTelegramSettings, type TelegramSettings } from '@/lib/monitor';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -31,7 +30,7 @@ const parseUid = (request: Request): string | null => {
 };
 
 const resolveDB = () => {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   return bindings.DB ?? bindings['rudl-app'];
 };

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { normalizeNetworkArea, isRegionalNetworkArea } from '@/lib/network-area';
 import { createCnUploadTicket } from '@/lib/cn-server';
 import { createRuUploadTicket } from '@/lib/ru-server';
 
-export const runtime = 'edge';
 
 type Env = {
   R2_BUCKET?: R2Bucket;
@@ -190,7 +189,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'UNAUTHENTICATED' }, { status: 401 });
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const R2 = bindings.R2_BUCKET;
   const accountId = bindings.R2_ACCOUNT_ID;

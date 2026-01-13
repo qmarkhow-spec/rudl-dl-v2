@@ -2,11 +2,10 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { fetchAdminUser } from '@/lib/admin';
 
-export const runtime = 'edge';
 
 type LayoutProps = {
   children: ReactNode;
@@ -38,7 +37,7 @@ export default async function AdminProtectedLayout({ children, params }: LayoutP
 
   const basePath = `/${locale}/admin`;
 
-  const ctx = getRequestContext();
+  const ctx = getCloudflareContext();
   const bindings = (ctx.env ?? {}) as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

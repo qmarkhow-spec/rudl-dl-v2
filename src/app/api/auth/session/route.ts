@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -25,7 +24,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

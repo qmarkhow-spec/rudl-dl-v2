@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { listEcpayOrders } from '@/lib/ecpay';
 
-export const runtime = 'edge';
 
 type Params = { lang: string };
 
@@ -108,7 +107,7 @@ export default async function AdminOrdersPage({ params }: { params: Promise<Para
   const dict = dictionaries[locale];
   const localePrefix = `/${locale}`;
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

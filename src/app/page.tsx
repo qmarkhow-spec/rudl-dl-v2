@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import { getTranslator } from '@/i18n/helpers';
 import { DEFAULT_LOCALE, type Locale, dictionaries } from '@/i18n/dictionary';
 
-export const runtime = 'edge';
 
 export default async function Page() {
   const cookieStore = await cookies();

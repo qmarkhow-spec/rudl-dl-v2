@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchDashboardPage } from '@/lib/dashboard';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -25,7 +24,7 @@ export async function GET(req: Request) {
     const page = Number(searchParams.get('page') ?? '1');
     const pageSize = Number(searchParams.get('pageSize') ?? '10');
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (!DB) {

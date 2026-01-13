@@ -1,9 +1,8 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { getEcpayOrder } from '@/lib/ecpay';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -29,7 +28,7 @@ export async function GET(req: Request, context: { params: Promise<{ tradeNo: st
       return NextResponse.json({ ok: false, error: 'MISSING_TRADE_NO' }, { status: 400 });
     }
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (!DB) {

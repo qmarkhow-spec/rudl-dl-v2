@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
+initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
   webpack: (config) => {

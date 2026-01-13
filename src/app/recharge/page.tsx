@@ -1,12 +1,11 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import RechargeClient from './RechargeClient';
 
-export const runtime = 'edge';
 
 export default function RechargePage() {
   let enableEcpay = true;
   try {
-    const context = getRequestContext();
+    const context = getCloudflareContext();
     const country = context?.cf?.country;
     enableEcpay = country ? country === 'TW' : true;
   } catch {

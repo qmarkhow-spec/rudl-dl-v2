@@ -1,11 +1,10 @@
 import { cookies } from 'next/headers';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import MonitorToolsClient from './MonitorToolsClient';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { getTranslator } from '@/i18n/helpers';
 import { fetchTelegramSettings } from '@/lib/monitor';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -35,7 +34,7 @@ export default async function MonitorToolsPage() {
     );
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

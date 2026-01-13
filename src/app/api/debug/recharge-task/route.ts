@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { enqueueRechargeTask } from '@/lib/recharge-queue';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -69,7 +68,7 @@ export async function POST(req: Request) {
       raw: normalizeRaw(payloadInput.raw),
     };
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (!DB) {

@@ -1,10 +1,9 @@
 import { cookies } from 'next/headers';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { fetchMembers } from '@/lib/members';
 import MemberActionsCell from './MemberActionsCell';
 
-export const runtime = 'edge';
 
 type Params = { lang: string };
 
@@ -31,7 +30,7 @@ export default async function AdminMembers({ params }: { params: Promise<Params>
   const locale = resolveLocale(lang, langCookie, localeCookie);
   const dict = dictionaries[locale];
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

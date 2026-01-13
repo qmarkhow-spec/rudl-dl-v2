@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { applyRecharge, RechargeError } from '@/lib/recharge';
 import { ensurePointTables } from '@/lib/schema';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'INVALID_POINTS' }, { status: 400 });
     }
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (!DB) {

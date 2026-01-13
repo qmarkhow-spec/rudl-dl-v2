@@ -1,9 +1,8 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { buildCheckoutForm, createEcpayOrder, type EcpayCheckoutParams } from '@/lib/ecpay';
 
-export const runtime = 'edge';
 
 const read = (value: unknown) => (typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined);
 
@@ -118,7 +117,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Missing MerchantTradeNo' }, { status: 500 });
     }
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (!DB) {

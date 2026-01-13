@@ -1,10 +1,9 @@
 import { cookies } from 'next/headers';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import DashboardClient from '@/app/dashboard/DashboardClient';
 import { fetchAdminLinksPage } from '@/lib/dashboard';
 
-export const runtime = 'edge';
 
 const PAGE_SIZE = 10;
 
@@ -32,7 +31,7 @@ export default async function AdminLinksPage({ params }: { params: Promise<Param
   const cookieLocale = cookieStore.get('locale')?.value;
   const locale = resolveLocale(lang, cookieLang, cookieLocale);
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

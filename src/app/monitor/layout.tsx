@@ -5,7 +5,6 @@ import MonitorNav from '@/components/MonitorNav';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 import { getTranslator } from '@/i18n/helpers';
 
-export const runtime = 'edge';
 
 const isLocale = (value: string | undefined): value is Locale =>
   Boolean(value && value in dictionaries);

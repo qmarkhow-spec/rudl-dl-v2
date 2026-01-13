@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 import { fetchAdminUser } from '@/lib/admin';
 import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 import { deleteDownloadStatsForLink } from '@/lib/downloads';
 
-export const runtime = 'edge';
 
 type EnvBindings = {
   DB?: D1Database;
@@ -54,7 +53,7 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
     return jsonError('UNAUTHENTICATED', 401);
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as EnvBindings;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {
@@ -214,7 +213,7 @@ export async function DELETE(request: Request, context: { params: Promise<RouteP
     return jsonError('UNAUTHENTICATED', 401);
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as EnvBindings;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;

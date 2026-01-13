@@ -1,18 +1,57 @@
 ﻿name = "rudl-dl-v2"
+main = ".open-next/worker.js"
 compatibility_date = "2025-10-03"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 [vars]
-# Additional worker variables can be defined here.
+# Fill in all values before deploying.
+ECPAY_MERCHANT_ID = "TODO"
+ECPAY_HASH_KEY = "TODO"
+ECPAY_HASH_IV = "TODO"
+ECPAY_MODE = "TODO"
+ECPAY_PAYMENT_METHOD = "TODO"
+ECPAY_RETURN_URL = "TODO"
+ECPAY_CLIENT_BACK_URL = "TODO"
+ECPAY_ORDER_RESULT_URL = "TODO"
+ECPAY_PAYMENT_INFO_URL = "TODO"
+ECPAY_CLIENT_REDIRECT_URL = "TODO"
+ECPAY_NEED_EXTRA_PAID_INFO = "TODO"
+ECPAY_BASE_URL = "TODO"
+NEXT_PUBLIC_APP_URL = "TODO"
+
+CN_SERVER_API_BASE = "TODO"
+CN_SERVER_API_TOKEN = "TODO"
+CN_DOWNLOAD_BASE_URL = "TODO"
+NEXT_PUBLIC_CN_DOWNLOAD_DOMAIN = "TODO"
+
+RU_SERVER_API_BASE = "TODO"
+RU_SERVER_API_TOKEN = "TODO"
+RU_DOWNLOAD_BASE_URL = "TODO"
+NEXT_PUBLIC_RU_DOWNLOAD_DOMAIN = "TODO"
+
+TELEGRAM_BOT_TOKEN = "TODO"
+TELEGRAM_CHAT_ID = "TODO"
+
+R2_ACCOUNT_ID = "64a1a594bb20e8320ad23c8b9ac9878a"
+R2_ACCESS_KEY_ID = "TODO"
+R2_SECRET_ACCESS_KEY = "TODO"
+R2_BUCKET_NAME = "mycowbay-files"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "rudl_app"
-database_id = "6971cadc-b4f7-4642-bc78-f1e5e1bee999"
+database_id = "637dac8c-0ec7-443d-9fb8-2468edce3c8c"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "mycowbay-files"
 
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "rudl-dl-v2"

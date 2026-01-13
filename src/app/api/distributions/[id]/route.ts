@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { deleteDownloadStatsForLink, ensureDownloadStatsTable } from '@/lib/downloads';
 import {
   fetchDistributionById,
@@ -23,7 +23,6 @@ import {
 } from '@/lib/network-area';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
-export const runtime = 'edge';
 
 const DEFAULT_TITLE = 'APP';
 
@@ -89,7 +88,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     return jsonError('UNAUTHENTICATED', 401);
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;
@@ -376,7 +375,7 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
     return jsonError('UNAUTHENTICATED', 401);
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;

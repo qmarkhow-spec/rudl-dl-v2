@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { fetchDistributionById } from '@/lib/distribution';
 import { fetchDownloadStatsRange, type DownloadStatsRow } from '@/lib/downloads';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -100,7 +99,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     return jsonError('UNAUTHENTICATED', 401);
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

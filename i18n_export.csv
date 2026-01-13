@@ -7,7 +7,7 @@ bill.platform,平台,平台,Platform
 bill.submit,送出,提交,Submit
 bill.title,扣點測試,扣点测试,Billing test
 dashboard.title,Links（最近 50 筆）,Links（最近 50 条）,Links (latest 50)
-env.adapter,轉接器：@cloudflare/next-on-pages,适配器：@cloudflare/next-on-pages,Adapter: @cloudflare/next-on-pages
+env.adapter,轉接器：@opennextjs/cloudflare,适配器：@opennextjs/cloudflare,Adapter: @opennextjs/cloudflare
 env.check,環境檢查,环境检查,Environment checks
 env.d1Binding,D1 綁定：,D1 绑定：,D1 binding: 
 env.linksCount,D1 links 計數：,D1 links 计数：,D1 links count: 

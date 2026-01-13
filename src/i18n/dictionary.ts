@@ -81,7 +81,7 @@ const en: Dict = {
   'dashboard.confirmDelete': 'Delete',
   'dashboard.cancelDelete': 'Cancel',
   'dashboard.viewOnly': 'View only',
-  'env.adapter': 'Adapter: @cloudflare/next-on-pages',
+  'env.adapter': 'Adapter: @opennextjs/cloudflare',
   'env.check': 'Environment checks',
   'env.d1Binding': 'D1 binding: ',
   'env.linksCount': 'D1 links count: ',

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchDistributionByCode } from '@/lib/distribution';
 import { recordDownload, type DownloadTotals } from '@/lib/downloads';
 import { triggerDownloadMonitors } from '@/lib/monitor';
@@ -9,7 +9,6 @@ import {
 } from '@/lib/regional-server';
 import { isRegionalNetworkArea } from '@/lib/network-area';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -22,7 +21,7 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ code: string }> }
 ) {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

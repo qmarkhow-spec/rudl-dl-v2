@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { generateLinkCode } from '@/lib/code';
 import { deleteDownloadStatsForLink, ensureDownloadStatsTable } from '@/lib/downloads';
 import { normalizeLanguageCode } from '@/lib/language';
@@ -15,7 +15,6 @@ import {
   type RegionalNetworkArea,
 } from '@/lib/network-area';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -114,7 +113,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'UNAUTHENTICATED' }, { status: 401 });
   }
 
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;

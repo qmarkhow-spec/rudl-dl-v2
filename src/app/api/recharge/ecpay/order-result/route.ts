@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import {
   verifyCheckMacValue,
@@ -10,7 +10,6 @@ import {
 } from '@/lib/ecpay';
 import { enqueueRechargeTask } from '@/lib/recharge-queue';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -145,7 +144,7 @@ const persistPaymentInfo = async (payload: Record<string, string>, bindings: Env
 
 export async function POST(req: Request) {
   const payload = await parseForm(req);
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const credentialsOverride = resolveCredentialsOverride(bindings);
   if (!(await verifyCheckMacValue(payload, credentialsOverride))) {
@@ -203,7 +202,7 @@ export async function GET(req: Request) {
   url.searchParams.forEach((value, key) => {
     if (value) paramsPayload[key] = value;
   });
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const credentialsOverride = resolveCredentialsOverride(bindings);
   if (!(await verifyCheckMacValue(paramsPayload, credentialsOverride))) {

@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 import AppShell from '@/components/AppShell';
 import { DEFAULT_LOCALE, dictionaries, type Locale } from '@/i18n/dictionary';
 
-export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: 'mycowbay V2',

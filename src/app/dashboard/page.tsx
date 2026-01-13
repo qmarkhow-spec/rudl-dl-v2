@@ -1,11 +1,10 @@
 ﻿import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { DEFAULT_LOCALE, type Locale, dictionaries } from '@/i18n/dictionary';
 import DashboardClient from './DashboardClient';
 import { fetchDashboardPage } from '@/lib/dashboard';
 
-export const runtime = 'edge';
 
 const PAGE_SIZE = 10;
 
@@ -27,7 +26,7 @@ export default async function Dashboard() {
     redirect(loginUrl);
   }
 
-  const ctx = getRequestContext();
+  const ctx = getCloudflareContext();
   const { env } = ctx;
 
   const bindings = env as Env;

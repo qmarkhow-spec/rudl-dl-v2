@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { applyRecharge, RechargeError } from '@/lib/recharge';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -10,7 +9,7 @@ type Env = {
 };
 
 export async function POST(req: Request) {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

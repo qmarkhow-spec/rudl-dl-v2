@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { decodePasswordRecord, hashPassword } from '@/lib/pw';
 import { DEFAULT_LOCALE, type Locale, dictionaries } from '@/i18n/dictionary';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -60,7 +59,7 @@ const invalidMessages: Record<Locale, string> = {
 };
 
 export async function POST(req: Request) {
-  const { env } = getRequestContext();
+  const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {

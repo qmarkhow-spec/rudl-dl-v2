@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 import { triggerPointMonitors } from '@/lib/monitor';
 import { fetchDistributionById } from '@/lib/distribution';
 import { isRegionalNetworkArea } from '@/lib/network-area';
 
-export const runtime = 'edge';
 
 type Env = {
   DB: D1Database;
@@ -18,8 +17,8 @@ type DeductRequestBody = {
 };
 
 export async function POST(req: Request) {
-  const { env } = getRequestContext<Env>();
-  const legacyDB = (env as unknown as { ['rudl-app']?: D1Database })['rudl-app'];
+  const { env } = getCloudflareContext() as { env: Env };
+  const legacyDB = env['rudl-app'];
   const DB = env.DB ?? legacyDB;
   if (!DB) {
     return NextResponse.json({ ok: false, error: 'D1 binding DB is missing' }, { status: 500 });

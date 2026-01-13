@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { recordEcpayRawNotify } from '@/lib/ecpay';
 
-export const runtime = 'edge';
 
 type Env = {
   DB?: D1Database;
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
       return new Response('0|MissingTradeNo', { status: 400 });
     }
 
-    const { env } = getRequestContext();
+    const { env } = getCloudflareContext();
     const bindings = env as Env;
     const DB = bindings.DB ?? bindings['rudl-app'];
     if (DB) {
