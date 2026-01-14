@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchDistributionById } from '@/lib/distribution';
-import { recordDownload, type DownloadTotals } from '@/lib/downloads';
-import { triggerDownloadMonitors } from '@/lib/monitor';
 
 
 type Env = {
@@ -58,26 +56,6 @@ export async function POST(req: Request) {
   }
 
   const ownerId = (link.ownerId ?? payload.ownerId ?? '').trim();
-
-  let totals: DownloadTotals | null = null;
-  try {
-    totals = await recordDownload(DB, link.id, platform);
-  } catch (error) {
-    console.error('[ru-download] recordDownload failed', error);
-  }
-
-  if (totals && ownerId) {
-    try {
-      await triggerDownloadMonitors(DB, {
-        ownerId,
-        linkCode: link.code,
-        platform,
-        totals,
-      });
-    } catch (error) {
-      console.warn('[ru-download] monitor failed', error);
-    }
-  }
 
   if (ownerId) {
     const origin = new URL(req.url);

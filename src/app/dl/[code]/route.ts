@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { fetchDistributionByCode } from '@/lib/distribution';
-import { recordDownload, type DownloadTotals } from '@/lib/downloads';
-import { triggerDownloadMonitors } from '@/lib/monitor';
 import {
   getRegionalDownloadBaseUrl,
   type RegionalServerBindings,
@@ -90,26 +88,6 @@ export async function GET(
   let effectivePlatform = (selected.platform ?? '').toLowerCase() as 'apk' | 'ipa';
   if (effectivePlatform !== 'apk' && effectivePlatform !== 'ipa') {
     effectivePlatform = platform;
-  }
-
-  let downloadTotals: DownloadTotals | null = null;
-  try {
-    downloadTotals = await recordDownload(DB, link.id, effectivePlatform);
-  } catch {
-    // ignore download counter failures
-  }
-
-  if (downloadTotals && link.ownerId) {
-    try {
-      await triggerDownloadMonitors(DB, {
-        ownerId: link.ownerId,
-        linkCode: link.code,
-        platform: effectivePlatform,
-        totals: downloadTotals,
-      });
-    } catch {
-      // suppress monitor errors to avoid blocking download
-    }
   }
 
   const destination =
