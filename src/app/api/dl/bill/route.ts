@@ -24,15 +24,21 @@ const buildThrottleKey = (accountId: string, linkId: string, platform: string) =
 const buildThrottleRequest = (key: string) =>
   new Request(`https://cache.mycowbay/${encodeURIComponent(key)}`, { method: 'GET' });
 
+const getThrottleCache = async (): Promise<Cache | null> => {
+  const storage = globalThis.caches;
+  if (!storage) return null;
+  return storage.open('dl-bill-throttle');
+};
+
 const isThrottled = async (key: string): Promise<boolean> => {
-  const cache = globalThis.caches?.default;
+  const cache = await getThrottleCache();
   if (!cache) return false;
   const hit = await cache.match(buildThrottleRequest(key));
   return Boolean(hit);
 };
 
 const markThrottled = async (key: string): Promise<void> => {
-  const cache = globalThis.caches?.default;
+  const cache = await getThrottleCache();
   if (!cache) return;
   const response = new Response('1', {
     headers: { 'cache-control': `max-age=${THROTTLE_SECONDS}` },
