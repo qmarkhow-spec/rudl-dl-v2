@@ -43,29 +43,23 @@ export async function GET(
 
   const files = link.files ?? [];
   const primaryFile =
-    (link.fileId && files.find((file) => file.id === link.fileId && file.r2Key)) ||
-    files.find(
-      (file) => file.r2Key && (file.platform ?? '').toLowerCase() === 'ipa'
-    ) ||
+    files.find((file) => file.r2Key && (file.platform ?? '').toLowerCase() === 'ipa') ||
     null;
 
   if (!primaryFile?.r2Key) {
     return resp404('File Missing');
   }
 
-  const title =
-    primaryFile.title ??
-    link.title ??
-    DEFAULT_TITLE;
-  const version =
-    primaryFile.version ??
-    link.ipaVersion ??
-    link.apkVersion ??
-    '1.0';
-  const bundleId =
-    primaryFile.bundleId ??
-    link.bundleId ??
-    `com.unknown.${link.code.toLowerCase()}`;
+  const bundleId = (primaryFile.bundleId ?? '').trim();
+  const version = (primaryFile.version ?? '').trim();
+  const title = (primaryFile.title ?? '').trim() || bundleId || DEFAULT_TITLE;
+
+  if (!bundleId || !version) {
+    return new Response('IPA metadata missing', {
+      status: 422,
+      headers: { 'cache-control': 'no-store' },
+    });
+  }
 
   const ipaUrl = `${CDN_BASE}${encodeRfc3986Path(primaryFile.r2Key.replace(/^\/+/, ''))}`;
 

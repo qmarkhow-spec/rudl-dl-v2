@@ -94,9 +94,9 @@ export async function GET(
   const hasIpa = Boolean(ipaFile);
 
   const displayTitle =
-    link.title ?? ipaFile?.title ?? apkFile?.title ?? DEFAULT_APP_TITLE;
+    ipaFile?.title ?? link.title ?? apkFile?.title ?? DEFAULT_APP_TITLE;
   const displayBundleId =
-    link.bundleId ?? ipaFile?.bundleId ?? apkFile?.bundleId ?? '';
+    ipaFile?.bundleId ?? link.bundleId ?? apkFile?.bundleId ?? '';
 
   const androidVersion = apkFile?.version ?? link.apkVersion ?? '';
   const iosVersion = ipaFile?.version ?? link.ipaVersion ?? '';
@@ -104,7 +104,7 @@ export async function GET(
   const androidSizeValue = typeof apkFile?.size === 'number' ? apkFile.size : null;
   const iosSizeValue = typeof ipaFile?.size === 'number' ? ipaFile.size : null;
 
-  const iosBundleId = ipaFile?.bundleId ?? link.bundleId ?? '';
+  const iosBundleId = ipaFile?.bundleId ?? '';
 
   const missing: string[] = [];
   if (hasIpa) {
