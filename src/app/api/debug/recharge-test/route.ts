@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { applyRecharge, RechargeError } from '@/lib/recharge';
-import { ensurePointTables } from '@/lib/schema';
 
 
 type Env = {
@@ -37,7 +36,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'D1 binding DB is missing' }, { status: 500 });
     }
 
-    await ensurePointTables(DB);
     const result = await applyRecharge(DB, accountId, points, memo ?? 'debug-recharge-test');
 
     return NextResponse.json({ ok: true, result: { ...result, memo: memo ?? 'debug-recharge-test' } });
@@ -61,4 +59,3 @@ export async function GET() {
     },
   });
 }
-

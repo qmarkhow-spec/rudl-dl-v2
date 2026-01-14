@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 import { triggerPointMonitors } from '@/lib/monitor';
 import { fetchDistributionById } from '@/lib/distribution';
 import { isRegionalNetworkArea } from '@/lib/network-area';
@@ -30,29 +29,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'bad request' }, { status: 400 });
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  const bucket_minute = Math.floor(now / 60);
   const link = await fetchDistributionById(DB, link_id).catch(() => null);
   const isRegionalDownload = link ? isRegionalNetworkArea(link.networkArea) : false;
   const cost =
     platform === 'ipa' ? (isRegionalDownload ? 30 : 5) : isRegionalDownload ? 10 : 3;
 
   try {
-    await ensurePointTables(DB);
-    const hasBalance = await hasUsersBalanceColumn(DB);
-
-    const exists = await DB.prepare(
-      `SELECT 1 FROM point_dedupe WHERE account_id=? AND link_id=? AND platform=? AND bucket_minute=? LIMIT 1`
-    ).bind(account_id, link_id, platform, bucket_minute).first();
-    if (exists) {
-      return NextResponse.json({ ok: true, deduped: true });
-    }
-
-    const balanceQuery = hasBalance
-      ? 'SELECT balance FROM users WHERE id=? LIMIT 1'
-      : 'SELECT balance FROM point_accounts WHERE id=? LIMIT 1';
-
-    const acct = await DB.prepare(balanceQuery).bind(account_id).first<{ balance: number }>();
+    const acct = await DB.prepare('SELECT balance FROM users WHERE id=? LIMIT 1')
+      .bind(account_id)
+      .first<{ balance: number }>();
     if (!acct) {
       return NextResponse.json({ ok: false, error: 'ACCOUNT_NOT_FOUND' }, { status: 404 });
     }
@@ -61,44 +46,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'INSUFFICIENT_POINTS' }, { status: 402 });
     }
 
-    const id = crypto.randomUUID();
-    const statements: D1PreparedStatement[] = [];
-
-    statements.push(
-      DB.prepare(
-        `INSERT INTO point_ledger (id, account_id, delta, reason, link_id, download_id, bucket_minute, platform, created_at)
-         VALUES (?, ?, ?, 'download', ?, NULL, ?, ?, ?)`
-      ).bind(id, account_id, -cost, link_id, bucket_minute, platform, now)
-    );
-
-    if (hasBalance) {
-      statements.push(
-        DB.prepare(`UPDATE users SET balance = balance - ? WHERE id=?`).bind(cost, account_id)
-      );
-    } else {
-      const hasUpdatedAt = await hasPointAccountsUpdatedAt(DB);
-      if (hasUpdatedAt) {
-        statements.push(
-          DB.prepare(`UPDATE point_accounts SET balance = balance - ?, updated_at=? WHERE id=?`).bind(
-            cost,
-            now,
-            account_id
-          )
-        );
-      } else {
-        statements.push(
-          DB.prepare(`UPDATE point_accounts SET balance = balance - ? WHERE id=?`).bind(cost, account_id)
-        );
-      }
-    }
-
-    statements.push(
-      DB.prepare(
-        `INSERT INTO point_dedupe (account_id, link_id, bucket_minute, platform) VALUES (?, ?, ?, ?)`
-      ).bind(account_id, link_id, bucket_minute, platform)
-    );
-
-    await DB.batch(statements);
+    await DB.prepare('UPDATE users SET balance = balance - ? WHERE id=?')
+      .bind(cost, account_id)
+      .run();
 
     try {
       await triggerPointMonitors(DB, {
@@ -113,10 +63,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, cost });
   } catch (e: unknown) {
     const error = e instanceof Error ? e.message : String(e);
-    if (/\bpoint_dedupe\b/.test(error) && /constraint/i.test(error)) {
-      return NextResponse.json({ ok: true, deduped: true });
-    }
-
     return NextResponse.json({ ok: false, error }, { status: 500 });
   }
 }

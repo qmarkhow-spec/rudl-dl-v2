@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 import { fetchAdminUser } from '@/lib/admin';
-import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 import { deleteDownloadStatsForLink } from '@/lib/downloads';
 
 
@@ -65,8 +64,6 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
     return jsonError('FORBIDDEN', 403);
   }
 
-  await ensurePointTables(DB);
-
   let payload: Partial<{
     role: unknown;
     setBalance: unknown;
@@ -95,21 +92,10 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
       return jsonError('NOT_FOUND', 404);
     }
 
-    const hasBalanceColumn = await hasUsersBalanceColumn(DB);
-    const hasLegacyUpdatedAt = hasBalanceColumn ? false : await hasPointAccountsUpdatedAt(DB);
-    let currentBalance = 0;
-    if (hasBalanceColumn) {
-      const balanceRow = await DB.prepare('SELECT balance FROM users WHERE id=? LIMIT 1')
-        .bind(memberId)
-        .first<{ balance?: number | null }>();
-      currentBalance = Number(balanceRow?.balance ?? 0);
-    } else {
-      const legacyRow = await DB.prepare('SELECT balance FROM point_accounts WHERE id=? LIMIT 1')
-        .bind(memberId)
-        .first<{ balance?: number | null }>()
-        .catch(() => null);
-      currentBalance = legacyRow ? Number(legacyRow.balance ?? 0) : 0;
-    }
+    const balanceRow = await DB.prepare('SELECT balance FROM users WHERE id=? LIMIT 1')
+      .bind(memberId)
+      .first<{ balance?: number | null }>();
+    const currentBalance = Number(balanceRow?.balance ?? 0);
 
     let workingBalance = currentBalance;
     const ledgerEntries: Array<{ delta: number; reason: string }> = [];
@@ -137,35 +123,7 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
     }
 
     if (workingBalance !== currentBalance) {
-      if (hasBalanceColumn) {
-        updates.push(DB.prepare('UPDATE users SET balance=? WHERE id=?').bind(workingBalance, memberId).run());
-      } else {
-        if (hasLegacyUpdatedAt) {
-          updates.push(
-            DB.prepare('INSERT OR IGNORE INTO point_accounts (id, balance, updated_at) VALUES (?, ?, ?)')
-              .bind(memberId, 0, now)
-              .run()
-              .catch(() => undefined)
-          );
-          updates.push(
-            DB.prepare('UPDATE point_accounts SET balance=?, updated_at=? WHERE id=?')
-              .bind(workingBalance, now, memberId)
-              .run()
-          );
-        } else {
-          updates.push(
-            DB.prepare('INSERT OR IGNORE INTO point_accounts (id, balance) VALUES (?, 0)')
-              .bind(memberId)
-              .run()
-              .catch(() => undefined)
-          );
-          updates.push(
-            DB.prepare('UPDATE point_accounts SET balance=? WHERE id=?')
-              .bind(workingBalance, memberId)
-              .run()
-          );
-        }
-      }
+      updates.push(DB.prepare('UPDATE users SET balance=? WHERE id=?').bind(workingBalance, memberId).run());
     }
 
     if (ledgerEntries.length) {
@@ -230,8 +188,6 @@ export async function DELETE(request: Request, context: { params: Promise<RouteP
   }
 
   try {
-    await ensurePointTables(DB);
-
     const memberExists = await DB.prepare('SELECT id FROM users WHERE id=? LIMIT 1')
       .bind(memberId)
       .first<{ id: string }>();
@@ -273,10 +229,6 @@ export async function DELETE(request: Request, context: { params: Promise<RouteP
       })
     );
 
-    await DB.prepare('DELETE FROM point_accounts WHERE id=?')
-      .bind(memberId)
-      .run()
-      .catch(() => undefined);
     await DB.prepare('DELETE FROM point_ledger WHERE account_id=?')
       .bind(memberId)
       .run()

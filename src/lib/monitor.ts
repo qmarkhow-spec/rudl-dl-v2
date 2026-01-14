@@ -96,20 +96,15 @@ export async function updateTelegramSettings(
   return fetchTelegramSettings(DB, userId);
 }
 
-const monitorTableCache = new Set<string>();
+const MONITOR_TABLE = 'monitor_records';
+let monitorTableEnsured = false;
 
-const sanitizeMonitorSuffix = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '_');
-
-const monitorTableName = (userId: string) => `monitor_${sanitizeMonitorSuffix(userId)}`;
-
-const quoteIdentifier = (name: string) => `"${name.replace(/"/g, '""')}"`;
-
-export async function ensureMonitorTable(DB: D1Database, userId: string): Promise<string> {
-  const name = monitorTableName(userId);
-  if (monitorTableCache.has(name)) return name;
-  const quoted = quoteIdentifier(name);
+export async function ensureMonitorTable(DB: D1Database): Promise<void> {
+  if (monitorTableEnsured) return;
   await DB.prepare(
-    `CREATE TABLE IF NOT EXISTS ${quoted} (
+    `CREATE TABLE IF NOT EXISTS ${MONITOR_TABLE} (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
       mon_option TEXT NOT NULL,
       mon_detail TEXT NOT NULL,
       noti_method TEXT NOT NULL,
@@ -117,8 +112,10 @@ export async function ensureMonitorTable(DB: D1Database, userId: string): Promis
       is_active INTEGER NOT NULL DEFAULT 1
     )`
   ).run();
-  monitorTableCache.add(name);
-  return name;
+  await DB.prepare(
+    `CREATE INDEX IF NOT EXISTS idx_${MONITOR_TABLE}_user ON ${MONITOR_TABLE} (user_id)`
+  ).run();
+  monitorTableEnsured = true;
 }
 
 export type MonitorRecordInsert = {
@@ -144,12 +141,13 @@ export async function insertMonitorRecord(
   userId: string,
   record: MonitorRecordInsert
 ): Promise<number | null> {
-  const name = await ensureMonitorTable(DB, userId);
-  const quoted = quoteIdentifier(name);
+  await ensureMonitorTable(DB);
   const result = await DB.prepare(
-    `INSERT INTO ${quoted} (mon_option, mon_detail, noti_method, noti_detail, is_active) VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO ${MONITOR_TABLE} (user_id, mon_option, mon_detail, noti_method, noti_detail, is_active)
+     VALUES (?, ?, ?, ?, ?, ?)`
   )
     .bind(
+      userId,
       record.monOption,
       JSON.stringify(record.monDetail),
       record.notiMethod,
@@ -168,12 +166,11 @@ export async function updateMonitorRecord(
 ): Promise<boolean> {
   const normalizedRowId = normalizeRowId(rowId);
   if (normalizedRowId === null) return false;
-  const name = await ensureMonitorTable(DB, userId);
-  const quoted = quoteIdentifier(name);
+  await ensureMonitorTable(DB);
   const result = await DB.prepare(
-    `UPDATE ${quoted}
+    `UPDATE ${MONITOR_TABLE}
      SET mon_option=?, mon_detail=?, noti_method=?, noti_detail=?, is_active=?
-     WHERE rowid=?`
+     WHERE id=? AND user_id=?`
   )
     .bind(
       record.monOption,
@@ -181,7 +178,8 @@ export async function updateMonitorRecord(
       record.notiMethod,
       JSON.stringify(record.notiDetail),
       typeof record.isActive === 'number' ? record.isActive : 1,
-      normalizedRowId
+      normalizedRowId,
+      userId
     )
     .run();
   return typeof result.meta?.changes === 'number' && result.meta.changes > 0;
@@ -194,16 +192,15 @@ export async function deleteMonitorRecord(
 ): Promise<boolean> {
   const normalizedRowId = normalizeRowId(rowId);
   if (normalizedRowId === null) return false;
-  const name = await ensureMonitorTable(DB, userId);
-  const quoted = quoteIdentifier(name);
-  const result = await DB.prepare(`DELETE FROM ${quoted} WHERE rowid=?`)
-    .bind(normalizedRowId)
+  await ensureMonitorTable(DB);
+  const result = await DB.prepare(`DELETE FROM ${MONITOR_TABLE} WHERE id=? AND user_id=?`)
+    .bind(normalizedRowId, userId)
     .run();
   return typeof result.meta?.changes === 'number' && result.meta.changes > 0;
 }
 
 type RawMonitorRow = {
-  rowid: number | string;
+  id: number | string;
   mon_option: string;
   mon_detail: string | null;
   noti_detail: string | null;
@@ -243,11 +240,14 @@ export async function listMonitorSummaries(
   DB: D1Database,
   userId: string
 ): Promise<MonitorSummary[]> {
-  const name = await ensureMonitorTable(DB, userId);
-  const quoted = quoteIdentifier(name);
+  await ensureMonitorTable(DB);
   const result = await DB.prepare(
-    `SELECT rowid, mon_option, mon_detail, noti_method, noti_detail, is_active FROM ${quoted} ORDER BY rowid DESC`
+    `SELECT id, mon_option, mon_detail, noti_method, noti_detail, is_active
+     FROM ${MONITOR_TABLE}
+     WHERE user_id=?
+     ORDER BY id DESC`
   )
+    .bind(userId)
     .all<RawMonitorRow>()
     .catch(() => null);
   const rows = result?.results ?? [];
@@ -260,7 +260,7 @@ export async function listMonitorSummaries(
 
     if (row.mon_option === 'pb' && typeof detail.point === 'number') {
       summaries.push({
-        id: String(row.rowid),
+        id: String(row.id),
         type: 'points',
         threshold: detail.point,
         target: noti.target,
@@ -276,7 +276,7 @@ export async function listMonitorSummaries(
       );
       if (!metric || typeof detail.link !== 'string' || typeof detail.num !== 'number') continue;
       summaries.push({
-        id: String(row.rowid),
+        id: String(row.id),
         type: 'downloads',
         threshold: detail.num,
         metric,

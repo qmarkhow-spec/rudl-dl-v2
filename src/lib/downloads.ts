@@ -9,29 +9,25 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
 
 const formatDate = (date: Date) => DATE_FORMATTER.format(date);
 
-const sanitizeLinkId = (linkId: string) => linkId.replace(/[^a-zA-Z0-9]/g, '_');
+const STATS_TABLE = 'link_download_stats';
+let statsTableEnsured = false;
 
-export const getStatsTableName = (linkId: string) =>
-  `stats_${sanitizeLinkId(linkId)}`;
-
-const tableExists = async (DB: D1Database, tableName: string) => {
-  const row = await DB.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1"
-  )
-    .bind(tableName)
-    .first<{ name?: string }>();
-  return Boolean(row?.name);
-};
-
-const ensureStatsTable = async (DB: D1Database, tableName: string) => {
-  const statement = DB.prepare(
-    `CREATE TABLE IF NOT EXISTS "${tableName}" (
-      date TEXT PRIMARY KEY,
-      apk_dl INTEGER DEFAULT 0,
-      ipa_dl INTEGER DEFAULT 0
+const ensureStatsTable = async (DB: D1Database) => {
+  if (statsTableEnsured) return;
+  await DB.prepare(
+    `CREATE TABLE IF NOT EXISTS ${STATS_TABLE} (
+      link_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      apk_dl INTEGER NOT NULL DEFAULT 0,
+      ipa_dl INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (link_id, date)
     )`
-  );
-  await statement.run();
+  ).run();
+  await DB.prepare(
+    `CREATE INDEX IF NOT EXISTS idx_${STATS_TABLE}_link_date
+     ON ${STATS_TABLE} (link_id, date)`
+  ).run();
+  statsTableEnsured = true;
 };
 
 const toNumber = (value: unknown): number => {
@@ -127,16 +123,12 @@ export type DownloadTotals = {
 
 export async function ensureDownloadStatsTable(DB: D1Database, linkId?: string) {
   if (!linkId) return;
-  const tableName = getStatsTableName(linkId);
-  await ensureStatsTable(DB, tableName);
+  await ensureStatsTable(DB);
 }
 
 export async function deleteDownloadStatsForLink(DB: D1Database, linkId: string) {
-  const tableName = getStatsTableName(linkId);
-  if (!(await tableExists(DB, tableName))) {
-    return;
-  }
-  await DB.prepare(`DROP TABLE IF EXISTS "${tableName}"`).run();
+  await ensureStatsTable(DB);
+  await DB.prepare(`DELETE FROM ${STATS_TABLE} WHERE link_id=?`).bind(linkId).run();
 }
 
 export async function recordDownload(
@@ -145,27 +137,26 @@ export async function recordDownload(
   platform: 'apk' | 'ipa',
   now: Date = new Date()
 ): Promise<DownloadTotals> {
-  const tableName = getStatsTableName(linkId);
-  await ensureStatsTable(DB, tableName);
+  await ensureStatsTable(DB);
 
   const today = formatDate(now);
 
   const insertRow = DB.prepare(
-    `INSERT OR IGNORE INTO "${tableName}" (date, apk_dl, ipa_dl) VALUES (?, 0, 0)`
-  ).bind(today);
+    `INSERT OR IGNORE INTO ${STATS_TABLE} (link_id, date, apk_dl, ipa_dl) VALUES (?, ?, 0, 0)`
+  ).bind(linkId, today);
 
   const updateColumn = platform === 'apk' ? 'apk_dl' : 'ipa_dl';
   const updateRow = DB.prepare(
-    `UPDATE "${tableName}" SET ${updateColumn} = ${updateColumn} + 1 WHERE date=?`
-  ).bind(today);
+    `UPDATE ${STATS_TABLE} SET ${updateColumn} = ${updateColumn} + 1 WHERE link_id=? AND date=?`
+  ).bind(linkId, today);
 
   await DB.batch([insertRow, updateRow]);
 
   const todayRow =
     (await DB.prepare(
-      `SELECT apk_dl, ipa_dl FROM "${tableName}" WHERE date=?`
+      `SELECT apk_dl, ipa_dl FROM ${STATS_TABLE} WHERE link_id=? AND date=?`
     )
-      .bind(today)
+      .bind(linkId, today)
       .first<{ apk_dl?: number | string | null; ipa_dl?: number | string | null }>()) ?? {
       apk_dl: 0,
       ipa_dl: 0,
@@ -173,8 +164,10 @@ export async function recordDownload(
 
   const totals =
     (await DB.prepare(
-      `SELECT SUM(apk_dl) AS apkSum, SUM(ipa_dl) AS ipaSum FROM "${tableName}"`
-    ).first<{ apkSum?: number | string | null; ipaSum?: number | string | null }>()) ?? {};
+      `SELECT SUM(apk_dl) AS apkSum, SUM(ipa_dl) AS ipaSum FROM ${STATS_TABLE} WHERE link_id=?`
+    )
+      .bind(linkId)
+      .first<{ apkSum?: number | string | null; ipaSum?: number | string | null }>()) ?? {};
 
   const todayApk = toNumber(todayRow.apk_dl);
   const todayIpa = toNumber(todayRow.ipa_dl);
@@ -207,17 +200,15 @@ export async function fetchDownloadStatsRange(
   startDate: string,
   endDate: string
 ) {
-  const tableName = getStatsTableName(linkId);
-  if (!(await tableExists(DB, tableName))) {
-    return [];
-  }
+  await ensureStatsTable(DB);
   const result = await DB.prepare(
     `SELECT date, apk_dl, ipa_dl
-     FROM "${tableName}"
-     WHERE date BETWEEN ? AND ?
+     FROM ${STATS_TABLE}
+     WHERE link_id=?
+       AND date BETWEEN ? AND ?
      ORDER BY date ASC`
   )
-    .bind(startDate, endDate)
+    .bind(linkId, startDate, endDate)
     .all<DownloadStatsRow>();
   return (result?.results as DownloadStatsRow[] | undefined) ?? [];
 }

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { R2Bucket } from '@cloudflare/workers-types';
 import { encodePasswordRecord, hashPassword, randomSaltHex } from '@/lib/pw';
-import { ensurePointTables, hasPointAccountsUpdatedAt, hasUsersBalanceColumn } from '@/lib/schema';
 
 // 0
 type Env = {
@@ -92,30 +91,9 @@ export async function POST(req: Request) {
     const hash = await hashPassword(password, salt);
     const record = encodePasswordRecord(salt, hash);
     const now = Math.floor(Date.now() / 1000);
-    await ensurePointTables(DB);
-    const hasBalance = await hasUsersBalanceColumn(DB);
-
-    if (hasBalance) {
-      await DB.prepare('INSERT INTO users (id, email, pw_hash, role, balance, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(id, normalizedEmail, record, 'user', 0, now)
-        .run();
-    } else {
-      await DB.prepare('INSERT INTO users (id, email, pw_hash, role, created_at) VALUES (?, ?, ?, ?, ?)')
-        .bind(id, normalizedEmail, record, 'user', now)
-        .run();
-      const hasUpdatedAt = await hasPointAccountsUpdatedAt(DB);
-      if (hasUpdatedAt) {
-        await DB.prepare('INSERT OR IGNORE INTO point_accounts (id, balance, updated_at) VALUES (?, 0, ?)')
-          .bind(id, now)
-          .run()
-          .catch(() => undefined);
-      } else {
-        await DB.prepare('INSERT OR IGNORE INTO point_accounts (id, balance) VALUES (?, 0)')
-          .bind(id)
-          .run()
-          .catch(() => undefined);
-      }
-    }
+    await DB.prepare('INSERT INTO users (id, email, pw_hash, role, balance, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(id, normalizedEmail, record, 'user', 0, now)
+      .run();
 
     shouldRollback = true;
 
@@ -138,10 +116,6 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     if (shouldRollback && DB && newUserId) {
       await DB.prepare('DELETE FROM users WHERE id=?')
-        .bind(newUserId)
-        .run()
-        .catch(() => undefined);
-      await DB.prepare('DELETE FROM point_accounts WHERE id=?')
         .bind(newUserId)
         .run()
         .catch(() => undefined);
