@@ -93,15 +93,22 @@ export default function LoginPage() {
     <div className="mx-auto w-full max-w-md space-y-4 rounded-2xl border border-neutral-700 bg-neutral-900/80 p-6 text-white shadow-2xl shadow-black/50 backdrop-blur">
       <div className="flex items-center gap-3 border-b border-neutral-700 pb-4">
         <Image
-          src="/images/icon.png"
+          src="/images/icon.jpg"
           alt="mycowbay icon"
           width={48}
           height={48}
-          className="h-12 w-12"
+          className="h-12 w-12 rounded-sm object-cover"
           priority
         />
         <div>
-          <p className="text-sm uppercase tracking-wider text-neutral-400">{t('app.name')}</p>
+          <Image
+            src="/images/logo.jpg"
+            alt="mycowbay logo"
+            width={220}
+            height={80}
+            className="h-6 w-auto"
+            priority
+          />
           <h2 className="text-2xl font-semibold text-white">{t('auth.login.title') ?? 'Login'}</h2>
         </div>
       </div>

@@ -10,11 +10,10 @@ export const metadata: Metadata = {
   description: 'Next + Cloudflare Pages',
   icons: {
     icon: [
-      { url: '/favicon.ico', rel: 'icon', type: 'image/x-icon' },
-      { url: '/images/icon.png', type: 'image/png', sizes: '192x192' },
+      { url: '/images/icon.jpg', type: 'image/jpeg', sizes: '192x192' },
     ],
-    shortcut: ['/images/icon.png'],
-    apple: [{ url: '/images/icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: ['/images/icon.jpg'],
+    apple: [{ url: '/images/icon.jpg', sizes: '180x180', type: 'image/jpeg' }],
   },
 };
 

@@ -100,15 +100,22 @@ export default function LangNav() {
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <Link href={localePrefix || '/'} className="flex items-center gap-3 text-xl font-semibold text-gray-900">
         <Image
-          src="/images/logo.png"
-          alt="mycowbay logo"
-          width={256}
-          height={256}
-          className="h-10 w-auto sm:h-12"
+          src="/images/icon.jpg"
+          alt="mycowbay icon"
+          width={48}
+          height={48}
+          className="h-10 w-10 rounded-sm object-cover sm:h-12 sm:w-12"
           priority
         />
         <div className="text-left">
-          <div>{t('app.name')}</div>
+          <Image
+            src="/images/logo.jpg"
+            alt="mycowbay logo"
+            width={220}
+            height={80}
+            className="h-6 w-auto sm:h-7"
+            priority
+          />
           {accountLabel ? (
             <div className="text-xs font-normal text-gray-500">{accountLabel}</div>
           ) : (

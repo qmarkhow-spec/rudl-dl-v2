@@ -270,7 +270,7 @@ export async function GET(
 
       <div class="tip">${h(dl('tip'))}</div>
     </section>
-    <div class="footer">© ${nowYear} RU Download</div>
+    <div class="footer">© ${nowYear} mycowbay</div>
   </main>
 
   <div class="guide-mask" id="iosGuideMask"></div>
