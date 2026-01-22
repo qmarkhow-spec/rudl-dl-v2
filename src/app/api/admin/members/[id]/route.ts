@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
-import { fetchAdminUser } from '@/lib/admin';
+import { buildCorsHeaders, resolveAdminUid } from '@/lib/admin-auth';
 import { deleteDownloadStatsForLink } from '@/lib/downloads';
 
 
@@ -13,20 +13,13 @@ type EnvBindings = {
 
 type RouteParams = { id: string };
 
-const jsonError = (error: string, status = 400) =>
-  NextResponse.json({ ok: false, error }, { status });
+const jsonError = (error: string, status = 400, headers?: HeadersInit) =>
+  NextResponse.json({ ok: false, error }, { status, headers });
 
-const parseUid = (request: Request): string | null => {
-  const cookieHeader = request.headers.get('cookie');
-  if (!cookieHeader) return null;
-  const pair = cookieHeader
-    .split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith('uid='));
-  if (!pair) return null;
-  const value = pair.slice(4);
-  return value || null;
-};
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'));
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
 
 const toNumberOrNull = (value: unknown): number | null => {
   if (value === null || value === undefined) return null;
@@ -41,27 +34,22 @@ const toNumberOrNull = (value: unknown): number | null => {
 };
 
 export async function PATCH(request: Request, context: { params: Promise<RouteParams> }) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'));
   const { id } = await context.params;
   const memberId = (id ?? '').trim();
   if (!memberId) {
-    return jsonError('INVALID_MEMBER_ID', 400);
+    return jsonError('INVALID_MEMBER_ID', 400, corsHeaders);
   }
-
-  const uid = parseUid(request);
-  if (!uid) {
-    return jsonError('UNAUTHENTICATED', 401);
-  }
-
   const { env } = getCloudflareContext();
   const bindings = env as EnvBindings;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {
-    return jsonError('D1_NOT_AVAILABLE', 500);
+    return NextResponse.json({ ok: false, error: 'D1_NOT_AVAILABLE' }, { status: 500, headers: corsHeaders });
   }
 
-  const adminUser = await fetchAdminUser(DB, uid);
-  if (!adminUser) {
-    return jsonError('FORBIDDEN', 403);
+  const adminUid = await resolveAdminUid(request, DB);
+  if (!adminUid) {
+    return NextResponse.json({ ok: false, error: 'FORBIDDEN' }, { status: 403, headers: corsHeaders });
   }
 
   let payload: Partial<{
@@ -76,7 +64,7 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
       adjustBalance: unknown;
     }>;
   } catch {
-    return jsonError('INVALID_PAYLOAD', 400);
+    return jsonError('INVALID_PAYLOAD', 400, corsHeaders);
   }
 
   const nextRoleRaw = typeof payload.role === 'string' ? payload.role.trim().toLowerCase() : null;
@@ -89,7 +77,7 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
       .bind(memberId)
       .first<{ id: string; email?: string | null; role?: string | null }>();
     if (!userRow) {
-      return jsonError('NOT_FOUND', 404);
+      return NextResponse.json({ ok: false, error: 'NOT_FOUND' }, { status: 404, headers: corsHeaders });
     }
 
     const balanceRow = await DB.prepare('SELECT balance FROM users WHERE id=? LIMIT 1')
@@ -152,39 +140,34 @@ export async function PATCH(request: Request, context: { params: Promise<RoutePa
         role: nextRole ?? userRow.role ?? null,
         balance: workingBalance,
       },
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(message || 'UPDATE_FAILED', 500);
+    return NextResponse.json({ ok: false, error: message || 'UPDATE_FAILED' }, { status: 500, headers: corsHeaders });
   }
 }
 
 export async function DELETE(request: Request, context: { params: Promise<RouteParams> }) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'));
   const { id } = await context.params;
   const memberId = (id ?? '').trim();
   if (!memberId) {
-    return jsonError('INVALID_MEMBER_ID', 400);
+    return jsonError('INVALID_MEMBER_ID', 400, corsHeaders);
   }
-
-  const uid = parseUid(request);
-  if (!uid) {
-    return jsonError('UNAUTHENTICATED', 401);
-  }
-
   const { env } = getCloudflareContext();
   const bindings = env as EnvBindings;
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;
   if (!DB || !R2) {
-    return jsonError('MISSING_BINDINGS', 500);
+    return NextResponse.json({ ok: false, error: 'MISSING_BINDINGS' }, { status: 500, headers: corsHeaders });
   }
 
-  const adminUser = await fetchAdminUser(DB, uid);
-  if (!adminUser) {
-    return jsonError('FORBIDDEN', 403);
+  const adminUid = await resolveAdminUid(request, DB);
+  if (!adminUid) {
+    return NextResponse.json({ ok: false, error: 'FORBIDDEN' }, { status: 403, headers: corsHeaders });
   }
-  if (uid === memberId) {
-    return jsonError('CANNOT_DELETE_SELF', 400);
+  if (adminUid === memberId) {
+    return NextResponse.json({ ok: false, error: 'CANNOT_DELETE_SELF' }, { status: 400, headers: corsHeaders });
   }
 
   try {
@@ -192,7 +175,7 @@ export async function DELETE(request: Request, context: { params: Promise<RouteP
       .bind(memberId)
       .first<{ id: string }>();
     if (!memberExists) {
-      return jsonError('NOT_FOUND', 404);
+      return NextResponse.json({ ok: false, error: 'NOT_FOUND' }, { status: 404, headers: corsHeaders });
     }
 
     const linkRows = await DB.prepare('SELECT id FROM links WHERE owner_id=?').bind(memberId).all();
@@ -246,9 +229,9 @@ export async function DELETE(request: Request, context: { params: Promise<RouteP
       );
     }
 
-    return NextResponse.json({ ok: true, deleted: memberId });
+    return NextResponse.json({ ok: true, deleted: memberId }, { headers: corsHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(message || 'DELETE_FAILED', 500);
+    return NextResponse.json({ ok: false, error: message || 'DELETE_FAILED' }, { status: 500, headers: corsHeaders });
   }
 }

@@ -84,18 +84,18 @@ class _AppBootstrapState extends State<AppBootstrap> {
 }
 
 class AuthStore extends ChangeNotifier {
-  static const _cookieKey = 'admin_cookie';
+  static const _tokenKey = 'admin_token';
   static const _baseUrlKey = 'admin_base_url';
 
   String baseUrl = 'https://mycowbay.com';
-  String? cookie;
+  String? token;
 
-  bool get isLoggedIn => cookie != null && cookie!.isNotEmpty;
+  bool get isLoggedIn => token != null && token!.isNotEmpty;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     baseUrl = prefs.getString(_baseUrlKey) ?? baseUrl;
-    cookie = prefs.getString(_cookieKey);
+    token = prefs.getString(_tokenKey);
     notifyListeners();
   }
 
@@ -105,7 +105,7 @@ class AuthStore extends ChangeNotifier {
     required String baseUrl,
   }) async {
     final target = _normalizeBaseUrl(baseUrl);
-    final uri = Uri.parse('$target/api/auth/login');
+    final uri = Uri.parse('$target/api/admin/auth');
     final response = await http.post(
       uri,
       headers: {'content-type': 'application/json'},
@@ -114,26 +114,26 @@ class AuthStore extends ChangeNotifier {
     if (response.statusCode != 200) {
       return false;
     }
-
-    final setCookie = response.headers['set-cookie'];
-    final parsedCookie = _extractUidCookie(setCookie);
-    if (parsedCookie == null) {
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    if (payload['ok'] != true || payload['token'] == null) {
       return false;
     }
 
     this.baseUrl = target;
-    cookie = parsedCookie;
+    token = payload['token']?.toString();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlKey, target);
-    await prefs.setString(_cookieKey, parsedCookie);
+    if (token != null) {
+      await prefs.setString(_tokenKey, token!);
+    }
     notifyListeners();
     return true;
   }
 
   Future<void> logout() async {
-    cookie = null;
+    token = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_cookieKey);
+    await prefs.remove(_tokenKey);
     notifyListeners();
   }
 
@@ -146,26 +146,16 @@ class AuthStore extends ChangeNotifier {
     return 'https://${trimmed.replaceAll(RegExp(r'/+$'), '')}';
   }
 
-  String? _extractUidCookie(String? setCookie) {
-    if (setCookie == null || setCookie.isEmpty) return null;
-    final parts = setCookie.split(';');
-    final uidPart = parts.firstWhere(
-      (part) => part.trim().startsWith('uid='),
-      orElse: () => '',
-    );
-    if (uidPart.isEmpty) return null;
-    return uidPart.trim();
-  }
 }
 
 class AdminApi {
   final String baseUrl;
-  final String cookie;
+  final String token;
   final http.Client _client;
 
   AdminApi({
     required this.baseUrl,
-    required this.cookie,
+    required this.token,
     http.Client? client,
   }) : _client = client ?? http.Client();
 
@@ -174,7 +164,7 @@ class AdminApi {
   Map<String, String> get _headers => {
         'content-type': 'application/json',
         'accept': 'application/json',
-        'Cookie': cookie,
+        'authorization': 'Bearer $token',
       };
 
   Future<List<MemberRecord>> fetchMembers() async {
@@ -455,7 +445,7 @@ class _AdminHomeState extends State<AdminHome> {
 
   @override
   Widget build(BuildContext context) {
-    final api = AdminApi(baseUrl: widget.authStore.baseUrl, cookie: widget.authStore.cookie!);
+    final api = AdminApi(baseUrl: widget.authStore.baseUrl, token: widget.authStore.token!);
 
     return Scaffold(
       appBar: AppBar(
