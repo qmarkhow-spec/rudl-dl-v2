@@ -7,5 +7,5 @@ crons = ["*/10 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "rudl-app"
-database_id = "6971cadc-b4f7-4642-bc78-f1e5e1bee999"
+database_name = "rudl_app"
+database_id = "637dac8c-0ec7-443d-9fb8-2468edce3c8c"
