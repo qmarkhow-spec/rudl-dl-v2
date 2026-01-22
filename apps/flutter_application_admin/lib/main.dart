@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const AdminApp());
@@ -11,7 +15,7 @@ class AdminApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF22577A),
+      seedColor: const Color(0xFF1B4965),
       brightness: Brightness.light,
     );
     return MaterialApp(
@@ -21,493 +25,655 @@ class AdminApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: colorScheme,
         textTheme: GoogleFonts.spaceGroteskTextTheme(Theme.of(context).textTheme),
-        cardTheme: const CardTheme(
+        cardTheme: const CardThemeData(
           elevation: 0,
           margin: EdgeInsets.zero,
         ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
       ),
-      home: const HomeShell(),
+      home: const AppBootstrap(),
     );
   }
 }
 
-class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+class AppBootstrap extends StatefulWidget {
+  const AppBootstrap({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  State<AppBootstrap> createState() => _AppBootstrapState();
 }
 
-class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+class _AppBootstrapState extends State<AppBootstrap> {
+  final AuthStore _authStore = AuthStore();
+  bool _ready = false;
 
-  late final List<Widget> _pages = const [
-    OrdersView(),
-    PlaceholderView(title: 'Links'),
-    PlaceholderView(title: 'Members'),
-    PlaceholderView(title: 'Settings'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _authStore.load().then((_) {
+      if (!mounted) return;
+      setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _authStore,
+      builder: (context, _) {
+        if (_authStore.isLoggedIn) {
+          return AdminHome(authStore: _authStore);
+        }
+        return LoginScreen(authStore: _authStore);
+      },
+    );
+  }
+}
+
+class AuthStore extends ChangeNotifier {
+  static const _cookieKey = 'admin_cookie';
+  static const _baseUrlKey = 'admin_base_url';
+
+  String baseUrl = 'https://mycowbay.com';
+  String? cookie;
+
+  bool get isLoggedIn => cookie != null && cookie!.isNotEmpty;
+
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    baseUrl = prefs.getString(_baseUrlKey) ?? baseUrl;
+    cookie = prefs.getString(_cookieKey);
+    notifyListeners();
+  }
+
+  Future<bool> login({
+    required String email,
+    required String password,
+    required String baseUrl,
+  }) async {
+    final target = _normalizeBaseUrl(baseUrl);
+    final uri = Uri.parse('$target/api/auth/login');
+    final response = await http.post(
+      uri,
+      headers: {'content-type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    if (response.statusCode != 200) {
+      return false;
+    }
+
+    final setCookie = response.headers['set-cookie'];
+    final parsedCookie = _extractUidCookie(setCookie);
+    if (parsedCookie == null) {
+      return false;
+    }
+
+    this.baseUrl = target;
+    cookie = parsedCookie;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_baseUrlKey, target);
+    await prefs.setString(_cookieKey, parsedCookie);
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> logout() async {
+    cookie = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cookieKey);
+    notifyListeners();
+  }
+
+  String _normalizeBaseUrl(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return baseUrl;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed.replaceAll(RegExp(r'/+$'), '');
+    }
+    return 'https://${trimmed.replaceAll(RegExp(r'/+$'), '')}';
+  }
+
+  String? _extractUidCookie(String? setCookie) {
+    if (setCookie == null || setCookie.isEmpty) return null;
+    final parts = setCookie.split(';');
+    final uidPart = parts.firstWhere(
+      (part) => part.trim().startsWith('uid='),
+      orElse: () => '',
+    );
+    if (uidPart.isEmpty) return null;
+    return uidPart.trim();
+  }
+}
+
+class AdminApi {
+  final String baseUrl;
+  final String cookie;
+  final http.Client _client;
+
+  AdminApi({
+    required this.baseUrl,
+    required this.cookie,
+    http.Client? client,
+  }) : _client = client ?? http.Client();
+
+  Uri _uri(String path) => Uri.parse('$baseUrl$path');
+
+  Map<String, String> get _headers => {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+        'Cookie': cookie,
+      };
+
+  Future<List<MemberRecord>> fetchMembers() async {
+    final response = await _client.get(_uri('/api/admin/members'), headers: _headers);
+    if (response.statusCode != 200) {
+      throw ApiException('Fetch members failed (${response.statusCode})');
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    if (payload['ok'] != true) {
+      throw ApiException(payload['error']?.toString() ?? 'Fetch members failed');
+    }
+    final list = (payload['members'] as List<dynamic>? ?? []);
+    return list.map((raw) => MemberRecord.fromJson(raw as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<DistributionLink>> fetchDistributions({int page = 1, int pageSize = 20}) async {
+    final uri = _uri('/api/admin/links?page=$page&pageSize=$pageSize');
+    final response = await _client.get(uri, headers: _headers);
+    if (response.statusCode != 200) {
+      throw ApiException('Fetch links failed (${response.statusCode})');
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    if (payload['ok'] != true) {
+      throw ApiException(payload['error']?.toString() ?? 'Fetch links failed');
+    }
+    final list = (payload['links'] as List<dynamic>? ?? []);
+    return list.map((raw) => DistributionLink.fromJson(raw as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> updateMemberBalance({
+    required String memberId,
+    double? setBalance,
+    double? adjustBalance,
+  }) async {
+    final body = <String, dynamic>{};
+    if (setBalance != null) body['setBalance'] = setBalance;
+    if (adjustBalance != null) body['adjustBalance'] = adjustBalance;
+    final response = await _client.patch(
+      _uri('/api/admin/members/$memberId'),
+      headers: _headers,
+      body: jsonEncode(body),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException('Update balance failed (${response.statusCode})');
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    if (payload['ok'] != true) {
+      throw ApiException(payload['error']?.toString() ?? 'Update balance failed');
+    }
+  }
+}
+
+class ApiException implements Exception {
+  final String message;
+
+  ApiException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class MemberRecord {
+  final String id;
+  final String email;
+  final String role;
+  final double balance;
+  final DateTime createdAt;
+
+  const MemberRecord({
+    required this.id,
+    required this.email,
+    required this.role,
+    required this.balance,
+    required this.createdAt,
+  });
+
+  factory MemberRecord.fromJson(Map<String, dynamic> json) {
+    return MemberRecord(
+      id: json['id']?.toString() ?? '',
+      email: json['email']?.toString() ?? '-',
+      role: json['role']?.toString() ?? 'user',
+      balance: (json['balance'] as num?)?.toDouble() ?? 0,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (((json['createdAt'] as num?)?.toDouble() ?? 0) * 1000).toInt(),
+        isUtc: true,
+      ).toLocal(),
+    );
+  }
+}
+
+class DistributionLink {
+  final String id;
+  final String code;
+  final String title;
+  final String platform;
+  final bool isActive;
+  final int totalDownloads;
+
+  const DistributionLink({
+    required this.id,
+    required this.code,
+    required this.title,
+    required this.platform,
+    required this.isActive,
+    required this.totalDownloads,
+  });
+
+  factory DistributionLink.fromJson(Map<String, dynamic> json) {
+    return DistributionLink(
+      id: json['id']?.toString() ?? '',
+      code: json['code']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Untitled',
+      platform: json['platform']?.toString() ?? '',
+      isActive: json['isActive'] == true || json['isActive'] == 1,
+      totalDownloads: (json['totalTotalDl'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  final AuthStore authStore;
+
+  const LoginScreen({super.key, required this.authStore});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _baseUrlController = TextEditingController();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _baseUrlController.text = widget.authStore.baseUrl;
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _baseUrlController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mycowbay Admin',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Login with your admin account to manage members and distributions.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _baseUrlController,
+                        decoration: const InputDecoration(labelText: 'Base URL'),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty ? 'Base URL required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'Admin email'),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty ? 'Email required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(labelText: 'Password'),
+                        obscureText: true,
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty ? 'Password required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      if (_error != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE4E6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: Color(0xFFDC2626)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: const TextStyle(color: Color(0xFF991B1B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _loading ? null : _handleLogin,
+                          child: _loading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Login'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final ok = await widget.authStore.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        baseUrl: _baseUrlController.text.trim(),
+      );
+      if (!ok) {
+        setState(() => _error = 'Login failed, check credentials.');
+      }
+    } catch (error) {
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+}
+
+class AdminHome extends StatefulWidget {
+  final AuthStore authStore;
+
+  const AdminHome({super.key, required this.authStore});
+
+  @override
+  State<AdminHome> createState() => _AdminHomeState();
+}
+
+class _AdminHomeState extends State<AdminHome> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AdminApi(baseUrl: widget.authStore.baseUrl, cookie: widget.authStore.cookie!);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mycowbay Admin'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => widget.authStore.logout(),
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: _index,
-        children: _pages,
+        children: [
+          MembersScreen(api: api),
+          DistributionsScreen(api: api),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(icon: Icon(Icons.link), label: 'Links'),
           NavigationDestination(icon: Icon(Icons.group), label: 'Members'),
-          NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
+          NavigationDestination(icon: Icon(Icons.link), label: 'Distributions'),
         ],
       ),
     );
   }
 }
 
-class PlaceholderView extends StatelessWidget {
-  final String title;
+class MembersScreen extends StatefulWidget {
+  final AdminApi api;
 
-  const PlaceholderView({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        '$title view coming soon',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-    );
-  }
-}
-
-enum OrderStatus { pending, paid, failed }
-
-enum OrderStatusFilter { all, pending, paid, failed }
-
-extension OrderStatusX on OrderStatus {
-  String get label {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'Pending';
-      case OrderStatus.paid:
-        return 'Paid';
-      case OrderStatus.failed:
-        return 'Failed';
-    }
-  }
-
-  Color get color {
-    switch (this) {
-      case OrderStatus.pending:
-        return const Color(0xFFF4A261);
-      case OrderStatus.paid:
-        return const Color(0xFF2A9D8F);
-      case OrderStatus.failed:
-        return const Color(0xFFE76F51);
-    }
-  }
-}
-
-class Order {
-  final String id;
-  final String appName;
-  final String linkCode;
-  final String account;
-  final String platform;
-  final OrderStatus status;
-  final int points;
-  final double amount;
-  final DateTime createdAt;
-
-  const Order({
-    required this.id,
-    required this.appName,
-    required this.linkCode,
-    required this.account,
-    required this.platform,
-    required this.status,
-    required this.points,
-    required this.amount,
-    required this.createdAt,
-  });
-}
-
-class OrdersView extends StatefulWidget {
-  const OrdersView({super.key});
+  const MembersScreen({super.key, required this.api});
 
   @override
-  State<OrdersView> createState() => _OrdersViewState();
+  State<MembersScreen> createState() => _MembersScreenState();
 }
 
-class _OrdersViewState extends State<OrdersView> {
-  OrderStatusFilter _filter = OrderStatusFilter.all;
+class _MembersScreenState extends State<MembersScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  late Future<List<MemberRecord>> _future;
   String _query = '';
 
-  final List<Order> _orders = [
-    Order(
-      id: 'RG202601140001',
-      appName: 'TATAO',
-      linkCode: '3EE40466',
-      account: 'me@example.com',
-      platform: 'iOS',
-      status: OrderStatus.pending,
-      points: 30,
-      amount: 990,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-    ),
-    Order(
-      id: 'RG202601140002',
-      appName: 'Duo Runner',
-      linkCode: '1A9F2C8D',
-      account: 'ops@mycowbay.com',
-      platform: 'Android',
-      status: OrderStatus.paid,
-      points: 10,
-      amount: 300,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 35)),
-    ),
-    Order(
-      id: 'RG202601140003',
-      appName: 'SkyDesk',
-      linkCode: '90ACB119',
-      account: 'owner@mycowbay.com',
-      platform: 'Android',
-      status: OrderStatus.failed,
-      points: 3,
-      amount: 90,
-      createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 20)),
-    ),
-    Order(
-      id: 'RG202601140004',
-      appName: 'TATAO',
-      linkCode: '3EE40466',
-      account: 'qa@mycowbay.com',
-      platform: 'iOS',
-      status: OrderStatus.paid,
-      points: 30,
-      amount: 990,
-      createdAt: DateTime.now().subtract(const Duration(hours: 5, minutes: 40)),
-    ),
-  ];
-
-  List<Order> get _filteredOrders {
-    return _orders.where((order) {
-      if (_filter != OrderStatusFilter.all) {
-        final statusMatch = switch (_filter) {
-          OrderStatusFilter.pending => OrderStatus.pending,
-          OrderStatusFilter.paid => OrderStatus.paid,
-          OrderStatusFilter.failed => OrderStatus.failed,
-          OrderStatusFilter.all => order.status,
-        };
-        if (order.status != statusMatch) {
-          return false;
-        }
-      }
-
-      if (_query.trim().isEmpty) {
-        return true;
-      }
-
-      final q = _query.toLowerCase();
-      return order.appName.toLowerCase().contains(q) ||
-          order.linkCode.toLowerCase().contains(q) ||
-          order.account.toLowerCase().contains(q) ||
-          order.id.toLowerCase().contains(q);
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.api.fetchMembers();
+    _searchController.addListener(() => setState(() => _query = _searchController.text));
   }
 
-  int get _pendingCount =>
-      _orders.where((order) => order.status == OrderStatus.pending).length;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
-  int get _paidCount =>
-      _orders.where((order) => order.status == OrderStatus.paid).length;
-
-  int get _failedCount =>
-      _orders.where((order) => order.status == OrderStatus.failed).length;
-
-  int get _todayPoints => _orders.fold(0, (sum, order) => sum + order.points);
+  Future<void> _reload() async {
+    setState(() => _future = widget.api.fetchMembers());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Search member or email',
+            ),
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<MemberRecord>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: CircularProgressIndicator(),
+                ));
+              }
+              if (snapshot.hasError) {
+                return _ErrorCard(message: snapshot.error.toString(), onRetry: _reload);
+              }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Orders Hub',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(color: Colors.white),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'LIVE',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Fast order handling and one-tap billing for admins.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      StatCard(
-                        label: 'Pending',
-                        value: '$_pendingCount',
-                        accent: const Color(0xFFF4A261),
-                      ),
-                      StatCard(
-                        label: 'Paid',
-                        value: '$_paidCount',
-                        accent: const Color(0xFF2A9D8F),
-                      ),
-                      StatCard(
-                        label: 'Failed',
-                        value: '$_failedCount',
-                        accent: const Color(0xFFE76F51),
-                      ),
-                      StatCard(
-                        label: 'Points Today',
-                        value: '$_todayPoints',
-                        accent: const Color(0xFF38BDF8),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  const Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      QuickActionButton(
-                        icon: Icons.flash_on,
-                        label: 'Quick Bill',
-                      ),
-                      QuickActionButton(
-                        icon: Icons.qr_code_scanner,
-                        label: 'Scan Code',
-                      ),
-                      QuickActionButton(
-                        icon: Icons.undo,
-                        label: 'Refund',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search order, link, or account',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: OrderStatusFilter.values.map((filter) {
-                  final label = switch (filter) {
-                    OrderStatusFilter.all => 'All',
-                    OrderStatusFilter.pending => 'Pending',
-                    OrderStatusFilter.paid => 'Paid',
-                    OrderStatusFilter.failed => 'Failed',
-                  };
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: _filter == filter,
-                    onSelected: (_) => setState(() => _filter = filter),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final order = _filteredOrders[index];
+              final members = snapshot.data ?? [];
+              final filtered = members.where((member) {
+                final q = _query.trim().toLowerCase();
+                if (q.isEmpty) return true;
+                return member.email.toLowerCase().contains(q) ||
+                    member.id.toLowerCase().contains(q);
+              }).toList();
+
+              if (filtered.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: Center(child: Text('No members found.')),
+                );
+              }
+
+              return Column(
+                children: filtered.map((member) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: OrderCard(
-                      order: order,
-                      onTap: () => _showOrderDetails(context, order),
+                    child: MemberCard(
+                      member: member,
+                      onEdit: () => _openBalanceEditor(member),
                     ),
                   );
-                },
-                childCount: _filteredOrders.length,
-              ),
-            ),
+                }).toList(),
+              );
+            },
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        icon: const Icon(Icons.add),
-        label: const Text('New Order'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
       ),
     );
   }
 
-  void _showOrderDetails(BuildContext context, Order order) {
+  void _openBalanceEditor(MemberRecord member) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                order.appName,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 6),
-              Text('Order: ${order.id}'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  StatusPill(status: order.status),
-                  const SizedBox(width: 10),
-                  Text(order.platform),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DetailRow(label: 'Account', value: order.account),
-              DetailRow(label: 'Link code', value: order.linkCode),
-              DetailRow(label: 'Points', value: '${order.points} pts'),
-              DetailRow(label: 'Amount', value: '\$${order.amount.toStringAsFixed(0)}'),
-              DetailRow(
-                label: 'Created',
-                value: order.createdAt.toLocal().toString().split('.').first,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.undo),
-                      label: const Text('Refund'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.check),
-                      label: const Text('Mark Paid'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        return BalanceEditor(
+          member: member,
+          onSubmit: (setBalance, adjustBalance) async {
+            try {
+              await widget.api.updateMemberBalance(
+                memberId: member.id,
+                setBalance: setBalance,
+                adjustBalance: adjustBalance,
+              );
+              if (mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(const SnackBar(content: Text('Balance updated')));
+                _reload();
+              }
+            } catch (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text(error.toString())));
+              }
+            }
+          },
         );
       },
     );
   }
 }
 
-class StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color accent;
+class DistributionsScreen extends StatefulWidget {
+  final AdminApi api;
 
-  const StatCard({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
+  const DistributionsScreen({super.key, required this.api});
+
+  @override
+  State<DistributionsScreen> createState() => _DistributionsScreenState();
+}
+
+class _DistributionsScreenState extends State<DistributionsScreen> {
+  late Future<List<DistributionLink>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.api.fetchDistributions(pageSize: 50);
+  }
+
+  Future<void> _reload() async {
+    setState(() => _future = widget.api.fetchDistributions(pageSize: 50));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          const Text(
+            'Distributions',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: accent,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+          const SizedBox(height: 12),
+          FutureBuilder<List<DistributionLink>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: CircularProgressIndicator(),
+                ));
+              }
+              if (snapshot.hasError) {
+                return _ErrorCard(message: snapshot.error.toString(), onRetry: _reload);
+              }
+              final links = snapshot.data ?? [];
+              if (links.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: Center(child: Text('No distributions yet.')),
+                );
+              }
+              return Column(
+                children: links.map((link) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: DistributionCard(link: link),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -515,173 +681,216 @@ class StatCard extends StatelessWidget {
   }
 }
 
-class QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class MemberCard extends StatelessWidget {
+  final MemberRecord member;
+  final VoidCallback onEdit;
 
-  const QuickActionButton({super.key, required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.tonalIcon(
-      onPressed: () {},
-      icon: Icon(icon),
-      label: Text(label),
-      style: FilledButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.white.withOpacity(0.16),
-      ),
-    );
-  }
-}
-
-class OrderCard extends StatelessWidget {
-  final Order order;
-  final VoidCallback onTap;
-
-  const OrderCard({super.key, required this.order, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = order.status.color;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 6,
-              height: 120,
-              decoration: BoxDecoration(
-                color: statusColor,
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(18)),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            order.appName,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        StatusPill(status: order.status),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Link ${order.linkCode} • ${order.platform}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            order.account,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                        Text(
-                          '${order.points} pts',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      order.createdAt.toLocal().toString().split('.').first,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class StatusPill extends StatelessWidget {
-  final OrderStatus status;
-
-  const StatusPill({super.key, required this.status});
+  const MemberCard({super.key, required this.member, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: status.color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Text(
-        status.label,
-        style: TextStyle(
-          color: status.color,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: const Color(0xFFCBD5F5),
+            child: Text(member.email.isNotEmpty ? member.email[0].toUpperCase() : '?'),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(member.email, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text('Role: ${member.role} • Balance: ${member.balance.toStringAsFixed(0)}'),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune),
+            onPressed: onEdit,
+          ),
+        ],
       ),
     );
   }
 }
 
-class DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
+class DistributionCard extends StatelessWidget {
+  final DistributionLink link;
 
-  const DetailRow({super.key, required this.label, required this.value});
+  const DistributionCard({super.key, required this.link});
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = link.isActive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 64,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(link.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text('Code: ${link.code} • ${link.platform}'),
+                const SizedBox(height: 4),
+                Text('Total downloads: ${link.totalDownloads}'),
+              ],
+            ),
+          ),
+          Icon(link.isActive ? Icons.check_circle : Icons.cancel, color: statusColor),
+        ],
+      ),
+    );
+  }
+}
+
+class BalanceEditor extends StatefulWidget {
+  final MemberRecord member;
+  final void Function(double? setBalance, double? adjustBalance) onSubmit;
+
+  const BalanceEditor({super.key, required this.member, required this.onSubmit});
+
+  @override
+  State<BalanceEditor> createState() => _BalanceEditorState();
+}
+
+class _BalanceEditorState extends State<BalanceEditor> {
+  final _setController = TextEditingController();
+  final _adjustController = TextEditingController();
+
+  @override
+  void dispose() {
+    _setController.dispose();
+    _adjustController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: 12,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey.shade600),
-            ),
+          Text(widget.member.email, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text('Current balance: ${widget.member.balance.toStringAsFixed(0)}'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _setController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Set balance to'),
           ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _adjustController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Adjust balance by'),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Save'),
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _submit() {
+    final setValue = double.tryParse(_setController.text.trim());
+    final adjustValue = double.tryParse(_adjustController.text.trim());
+    if (setValue == null && adjustValue == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Enter set or adjust value.')));
+      return;
+    }
+    widget.onSubmit(setValue, adjustValue);
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFE4E6),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Text(message, style: const TextStyle(color: Color(0xFF991B1B))),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
