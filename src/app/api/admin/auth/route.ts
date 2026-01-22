@@ -54,10 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'INVALID_CREDENTIALS' }, { status: 401, headers: corsHeaders });
     }
 
-    const token = await createAdminToken(user.id);
-    if (!token) {
-      return NextResponse.json({ ok: false, error: 'ADMIN_APP_SECRET_MISSING' }, { status: 500, headers: corsHeaders });
-    }
+    const token = await createAdminToken(DB, user.id);
 
     return NextResponse.json({ ok: true, token, uid: user.id }, { headers: corsHeaders });
   } catch (error) {
