@@ -1,7 +1,7 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { fetchAdminUser } from '@/lib/admin';
 
-const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const TOKEN_TTL_SECONDS = 0; // 0 = never expire
 const SESSION_TABLE = 'admin_sessions';
 let sessionTableEnsured = false;
 
@@ -32,7 +32,7 @@ const randomToken = (): string => {
 export async function createAdminToken(DB: D1Database, uid: string): Promise<string> {
   await ensureSessionTable(DB);
   const now = Math.floor(Date.now() / 1000);
-  const expiresAt = now + TOKEN_TTL_SECONDS;
+  const expiresAt = TOKEN_TTL_SECONDS > 0 ? now + TOKEN_TTL_SECONDS : 0;
   const token = randomToken();
   await DB.prepare(
     `INSERT INTO ${SESSION_TABLE} (token, account_id, created_at, expires_at)
@@ -51,9 +51,11 @@ export async function verifyAdminToken(DB: D1Database, token: string): Promise<s
     .bind(token)
     .first<{ account_id?: string | null; expires_at?: number | null }>()
     .catch(() => null);
-  if (!row?.account_id || !row.expires_at) return null;
-  const now = Math.floor(Date.now() / 1000);
-  if (row.expires_at <= now) return null;
+  if (!row?.account_id || row.expires_at === null || row.expires_at === undefined) return null;
+  if (row.expires_at && row.expires_at > 0) {
+    const now = Math.floor(Date.now() / 1000);
+    if (row.expires_at <= now) return null;
+  }
   return row.account_id;
 }
 

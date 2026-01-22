@@ -85,16 +85,16 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
 class AuthStore extends ChangeNotifier {
   static const _tokenKey = 'admin_token';
-  static const _baseUrlKey = 'admin_base_url';
+  static const _fixedBaseUrl = 'https://app.mycowbay.com';
 
-  String baseUrl = 'https://mycowbay.com';
+  String baseUrl = _fixedBaseUrl;
   String? token;
 
   bool get isLoggedIn => token != null && token!.isNotEmpty;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    baseUrl = prefs.getString(_baseUrlKey) ?? baseUrl;
+    baseUrl = _fixedBaseUrl;
     token = prefs.getString(_tokenKey);
     notifyListeners();
   }
@@ -102,10 +102,8 @@ class AuthStore extends ChangeNotifier {
   Future<bool> login({
     required String email,
     required String password,
-    required String baseUrl,
   }) async {
-    final target = _normalizeBaseUrl(baseUrl);
-    final uri = Uri.parse('$target/api/admin/auth');
+    final uri = Uri.parse('$_fixedBaseUrl/api/admin/auth');
     final response = await http.post(
       uri,
       headers: {'content-type': 'application/json'},
@@ -119,10 +117,9 @@ class AuthStore extends ChangeNotifier {
       return false;
     }
 
-    this.baseUrl = target;
+    baseUrl = _fixedBaseUrl;
     token = payload['token']?.toString();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_baseUrlKey, target);
     if (token != null) {
       await prefs.setString(_tokenKey, token!);
     }
@@ -136,16 +133,6 @@ class AuthStore extends ChangeNotifier {
     await prefs.remove(_tokenKey);
     notifyListeners();
   }
-
-  String _normalizeBaseUrl(String input) {
-    final trimmed = input.trim();
-    if (trimmed.isEmpty) return baseUrl;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed.replaceAll(RegExp(r'/+$'), '');
-    }
-    return 'https://${trimmed.replaceAll(RegExp(r'/+$'), '')}';
-  }
-
 }
 
 class AdminApi {
@@ -297,21 +284,18 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _baseUrlController = TextEditingController();
   bool _loading = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _baseUrlController.text = widget.authStore.baseUrl;
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _baseUrlController.dispose();
     super.dispose();
   }
 
@@ -341,13 +325,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      TextFormField(
-                        controller: _baseUrlController,
-                        decoration: const InputDecoration(labelText: 'Base URL'),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'Base URL required' : null,
-                      ),
-                      const SizedBox(height: 12),
                       TextFormField(
                         controller: _emailController,
                         decoration: const InputDecoration(labelText: 'Admin email'),
@@ -418,7 +395,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final ok = await widget.authStore.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        baseUrl: _baseUrlController.text.trim(),
       );
       if (!ok) {
         setState(() => _error = 'Login failed, check credentials.');
@@ -487,13 +463,15 @@ class MembersScreen extends StatefulWidget {
 
 class _MembersScreenState extends State<MembersScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late Future<List<MemberRecord>> _future;
+  List<MemberRecord> _members = [];
+  bool _loading = true;
+  String? _error;
   String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _future = widget.api.fetchMembers();
+    _loadMembers();
     _searchController.addListener(() => setState(() => _query = _searchController.text));
   }
 
@@ -503,9 +481,28 @@ class _MembersScreenState extends State<MembersScreen> {
     super.dispose();
   }
 
-  Future<void> _reload() async {
-    setState(() => _future = widget.api.fetchMembers());
+  Future<void> _loadMembers() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final members = await widget.api.fetchMembers();
+      if (!mounted) return;
+      setState(() {
+        _members = members;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
   }
+
+  Future<void> _reload() async => _loadMembers();
 
   @override
   Widget build(BuildContext context) {
@@ -522,21 +519,18 @@ class _MembersScreenState extends State<MembersScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          FutureBuilder<List<MemberRecord>>(
-            future: _future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: Padding(
-                  padding: EdgeInsets.only(top: 24),
-                  child: CircularProgressIndicator(),
-                ));
-              }
-              if (snapshot.hasError) {
-                return _ErrorCard(message: snapshot.error.toString(), onRetry: _reload);
-              }
-
-              final members = snapshot.data ?? [];
-              final filtered = members.where((member) {
+          if (_loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 24),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_error != null)
+            _ErrorCard(message: _error!, onRetry: _reload)
+          else
+            Builder(builder: (context) {
+              final filtered = _members.where((member) {
                 final q = _query.trim().toLowerCase();
                 if (q.isEmpty) return true;
                 return member.email.toLowerCase().contains(q) ||
@@ -561,8 +555,7 @@ class _MembersScreenState extends State<MembersScreen> {
                   );
                 }).toList(),
               );
-            },
-          ),
+            }),
         ],
       ),
     );
@@ -584,6 +577,28 @@ class _MembersScreenState extends State<MembersScreen> {
                 adjustBalance: adjustBalance,
               );
               if (mounted) {
+                final nextBalance = () {
+                  double value = member.balance;
+                  if (setBalance != null) {
+                    value = setBalance;
+                  }
+                  if (adjustBalance != null) {
+                    value += adjustBalance;
+                  }
+                  return value;
+                }();
+                setState(() {
+                  final index = _members.indexWhere((entry) => entry.id == member.id);
+                  if (index >= 0) {
+                    _members[index] = MemberRecord(
+                      id: member.id,
+                      email: member.email,
+                      role: member.role,
+                      balance: nextBalance,
+                      createdAt: member.createdAt,
+                    );
+                  }
+                });
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context)
                     .showSnackBar(const SnackBar(content: Text('Balance updated')));
