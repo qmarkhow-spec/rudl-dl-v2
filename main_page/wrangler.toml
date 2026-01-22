@@ -1,0 +1,7 @@
+﻿name = "mycowbay-main"
+main = "worker.js"
+compatibility_date = "2025-10-03"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
