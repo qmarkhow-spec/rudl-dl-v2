@@ -104,7 +104,7 @@ export const buildCorsHeaders = (origin: string | null): HeadersInit => {
   if (!allowed) return {};
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE',
     'Access-Control-Allow-Headers': 'content-type, authorization',
     'Access-Control-Max-Age': '600',
     Vary: 'Origin',
