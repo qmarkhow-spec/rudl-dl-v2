@@ -763,7 +763,7 @@ class MemberCard extends StatelessWidget {
               children: [
                 Text(member.email, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('Role: ${member.role} ??Balance: ${member.balance.toStringAsFixed(0)}'),
+                Text('Role: ${member.role}  Balance: ${member.balance.toStringAsFixed(0)}'),
               ],
             ),
           ),
@@ -782,6 +782,13 @@ class DistributionCard extends StatelessWidget {
   final String baseUrl;
 
   const DistributionCard({super.key, required this.link, required this.baseUrl});
+
+  String _formatCount(int value) {
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return value.toString();
+  }
 
   String _buildDownloadUrl() {
     final sanitized = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
@@ -842,8 +849,8 @@ class DistributionCard extends StatelessWidget {
                 Text('Code: ${link.code}'),
                 const SizedBox(height: 4),
                 Text(
-                  'Today downloads: ${link.todayTotalDownloads} '
-                  '(APK: ${link.todayApkDownloads}, IPA: ${link.todayIpaDownloads})',
+                  'Today downloads: ${_formatCount(link.todayTotalDownloads)} '
+                  '(APK: ${_formatCount(link.todayApkDownloads)}, IPA: ${_formatCount(link.todayIpaDownloads)})',
                 ),
                 const SizedBox(height: 4),
                 Text('APK v$apkVersion  •  IPA v$ipaVersion'),
