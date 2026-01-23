@@ -330,6 +330,11 @@ String formatDateTime(DateTime date) {
   return formatter.format(date);
 }
 
+String formatDate(DateTime date) {
+  final formatter = DateFormat('yyyy/MM/dd');
+  return formatter.format(date);
+}
+
 String formatCount(int value) {
   if (value >= 1000) {
     return '${(value / 1000).toStringAsFixed(1)}K';

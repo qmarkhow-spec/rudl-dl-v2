@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'account_store.dart';
 import 'api.dart';
@@ -181,24 +182,58 @@ class _AccountsScreenState extends State<AccountsScreen> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: isActive ? const Color(0xFF1B4965) : Colors.blueGrey,
-                      child: Text(
-                        account.email.isNotEmpty ? account.email[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                  color: isActive ? const Color(0xFFE7F0F7) : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: isActive ? const Color(0xFF1B4965) : const Color(0xFFE2E8F0),
+                      width: isActive ? 1.5 : 1,
                     ),
-                    title: Text(account.email),
-                    subtitle: Text(account.baseUrl),
-                    trailing: Wrap(
-                      spacing: 8,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
                       children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    account.email,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  if (isActive) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1B4965),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'ACTIVE',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                         if (!isActive)
                           OutlinedButton(
                             onPressed: () => widget.store.setActive(account.id),
                             child: const Text('Use'),
                           ),
+                        const SizedBox(width: 8),
                         TextButton(
                           onPressed: () => widget.store.removeAccount(account.id),
                           child: const Text('Remove'),
@@ -542,6 +577,13 @@ class DistributionCard extends StatelessWidget {
     return '$sanitized/d/${link.code}';
   }
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw 'URL_LAUNCH_FAILED';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final url = _shareUrl();
@@ -626,11 +668,27 @@ class DistributionCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    url,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                  child: InkWell(
+                    onTap: () async {
+                      try {
+                        await _openUrl(url);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(content: Text('Unable to open link')));
+                        }
+                      }
+                    },
+                    child: Text(
+                      url,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -766,7 +824,13 @@ class _StatsDialogState extends State<StatsDialog> {
       _error = null;
     });
     try {
-      final data = await widget.api.fetchStats(linkId: widget.link.id);
+      final now = DateTime.now();
+      final from = now.subtract(const Duration(days: 9));
+      final data = await widget.api.fetchStats(
+        linkId: widget.link.id,
+        from: from,
+        to: now,
+      );
       if (!mounted) return;
       setState(() {
         _stats = data;
@@ -809,8 +873,6 @@ class _StatsDialogState extends State<StatsDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Total: ${stats.summary.total} (APK ${stats.summary.totalApk}, IPA ${stats.summary.totalIpa})'),
-        const SizedBox(height: 8),
-        Text('Range: ${formatDateTime(stats.summary.from)} → ${formatDateTime(stats.summary.to)}'),
         const SizedBox(height: 12),
         SizedBox(
           height: 200,
@@ -819,7 +881,7 @@ class _StatsDialogState extends State<StatsDialog> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
-                  '${formatDateTime(point.bucket)}  •  ${point.total} (APK ${point.apk}, IPA ${point.ipa})',
+                  '${formatDate(point.bucket)}  •  ${point.total} (APK ${point.apk}, IPA ${point.ipa})',
                   style: const TextStyle(fontSize: 12),
                 ),
               );
