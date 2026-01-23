@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
 import { fetchDistributionById } from '@/lib/distribution';
 import { fetchDownloadStatsRange, type DownloadStatsRow } from '@/lib/downloads';
+import { buildCorsHeaders } from '@/lib/cors';
 
 
 type Env = {
@@ -14,8 +15,8 @@ type Frequency = 'year' | 'month' | 'day' | 'hour';
 
 type StatsPoint = { bucket: string; apk: number; ipa: number; total: number };
 
-const jsonError = (error: string, status = 400) =>
-  NextResponse.json({ ok: false, error }, { status });
+const jsonError = (error: string, status = 400, headers?: HeadersInit) =>
+  NextResponse.json({ ok: false, error }, { status, headers });
 
 const parseUid = (req: Request): string | null => {
   const cookie = req.headers.get('cookie') ?? '';
@@ -88,30 +89,31 @@ const incrementTimestamp = (ms: number, frequency: Frequency) => {
 const MAX_BUCKETS = 2000;
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+  const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const params = await context.params;
   const linkId = String(params?.id ?? '').trim();
   if (!linkId) {
-    return jsonError('INVALID_LINK_ID', 400);
+    return jsonError('INVALID_LINK_ID', 400, corsHeaders);
   }
 
   const uid = parseUid(req);
   if (!uid) {
-    return jsonError('UNAUTHENTICATED', 401);
+    return jsonError('UNAUTHENTICATED', 401, corsHeaders);
   }
 
   const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {
-    return jsonError('Missing DB binding', 500);
+    return jsonError('Missing DB binding', 500, corsHeaders);
   }
 
   const link = await fetchDistributionById(DB, linkId);
   if (!link) {
-    return jsonError('NOT_FOUND', 404);
+    return jsonError('NOT_FOUND', 404, corsHeaders);
   }
   if (link.ownerId && link.ownerId !== uid) {
-    return jsonError('FORBIDDEN', 403);
+    return jsonError('FORBIDDEN', 403, corsHeaders);
   }
 
   const url = new URL(req.url);
@@ -130,11 +132,11 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   const fromDate = fromParam ? new Date(fromParam) : defaultFrom;
 
   if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
-    return jsonError('INVALID_RANGE', 400);
+    return jsonError('INVALID_RANGE', 400, corsHeaders);
   }
 
   if (fromDate.getTime() > toDate.getTime()) {
-    return jsonError('INVALID_RANGE', 400);
+    return jsonError('INVALID_RANGE', 400, corsHeaders);
   }
 
   const alignedFromDay = startOfDayUTC(fromDate);
@@ -149,7 +151,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     bucketTimes.push(cursor);
     cursor = incrementTimestamp(cursor, frequency);
     if (bucketTimes.length > MAX_BUCKETS) {
-      return jsonError('RANGE_TOO_LARGE', 400);
+      return jsonError('RANGE_TOO_LARGE', 400, corsHeaders);
     }
   }
   if (!bucketTimes.length) {
@@ -166,7 +168,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(message || 'QUERY_FAILED', 500);
+    return jsonError(message || 'QUERY_FAILED', 500, corsHeaders);
   }
 
   const toNumber = (value: number | string | null | undefined) => {
@@ -212,5 +214,10 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     bucketCount: points.length,
   };
 
-  return NextResponse.json({ ok: true, points, summary });
+  return NextResponse.json({ ok: true, points, summary }, { headers: corsHeaders });
+}
+
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'), { allowCredentials: true });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { normalizeNetworkArea, isRegionalNetworkArea } from '@/lib/network-area';
 import { createCnUploadTicket } from '@/lib/cn-server';
 import { createRuUploadTicket } from '@/lib/ru-server';
+import { buildCorsHeaders } from '@/lib/cors';
 
 
 type Env = {
@@ -184,9 +185,13 @@ async function presignPutUrl(options: {
 }
 
 export async function POST(req: Request) {
+  const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const uid = parseUid(req);
   if (!uid) {
-    return NextResponse.json({ ok: false, error: 'UNAUTHENTICATED' }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: 'UNAUTHENTICATED' },
+      { status: 401, headers: corsHeaders }
+    );
   }
 
   const { env } = getCloudflareContext();
@@ -201,26 +206,41 @@ export async function POST(req: Request) {
   try {
     payload = (await req.json()) as UploadRequestBody;
   } catch {
-    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PAYLOAD' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   if (!payload) {
-    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PAYLOAD' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const platform = (payload.platform ?? '').trim().toLowerCase() as Platform;
   if (platform !== 'apk' && platform !== 'ipa') {
-    return NextResponse.json({ ok: false, error: 'INVALID_PLATFORM' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PLATFORM' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const fileName = (payload.fileName ?? '').trim();
   if (!fileName) {
-    return NextResponse.json({ ok: false, error: 'FILENAME_REQUIRED' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'FILENAME_REQUIRED' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const size = typeof payload.size === 'number' && Number.isFinite(payload.size) ? payload.size : null;
   if (!size || size <= 0) {
-    return NextResponse.json({ ok: false, error: 'INVALID_SIZE' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_SIZE' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const rawContentType = (payload.contentType ?? '').trim();
@@ -274,15 +294,18 @@ export async function POST(req: Request) {
           sha256: null,
         },
       };
-      return NextResponse.json(response);
+      return NextResponse.json(response, { headers: corsHeaders });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return NextResponse.json({ ok: false, error: message }, { status: 500 });
+      return NextResponse.json({ ok: false, error: message }, { status: 500, headers: corsHeaders });
     }
   }
 
   if (!R2 || !accountId || !accessKeyId || !secretKey || !bucketName) {
-    return NextResponse.json({ ok: false, error: 'Missing R2 credentials' }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'Missing R2 credentials' },
+      { status: 500, headers: corsHeaders }
+    );
   }
 
   const exists = await R2.head(key);
@@ -319,5 +342,10 @@ export async function POST(req: Request) {
     },
   };
 
-  return NextResponse.json(response);
+  return NextResponse.json(response, { headers: corsHeaders });
+}
+
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'), { allowCredentials: true });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

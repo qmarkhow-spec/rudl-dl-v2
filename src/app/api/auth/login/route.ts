@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { decodePasswordRecord, hashPassword } from '@/lib/pw';
 import { DEFAULT_LOCALE, type Locale, dictionaries } from '@/i18n/dictionary';
+import { buildCorsHeaders } from '@/lib/cors';
 
 
 type Env = {
@@ -59,17 +60,23 @@ const invalidMessages: Record<Locale, string> = {
 };
 
 export async function POST(req: Request) {
+  const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const { env } = getCloudflareContext();
   const bindings = env as Env;
   const DB = bindings.DB ?? bindings['rudl-app'];
   if (!DB) {
-    return NextResponse.json({ ok: false, error: 'D1 binding DB is missing' }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'D1 binding DB is missing' },
+      { status: 500, headers: corsHeaders }
+    );
   }
 
   const body = (await req.json().catch(() => ({}))) as Partial<{ email: unknown; password: unknown }>;
   const email = typeof body.email === 'string' ? body.email : undefined;
   const password = typeof body.password === 'string' ? body.password : undefined;
-  if (!email || !password) return NextResponse.json({ ok: false, error: 'bad request' }, { status: 400 });
+  if (!email || !password) {
+    return NextResponse.json({ ok: false, error: 'bad request' }, { status: 400, headers: corsHeaders });
+  }
 
   try {
     const locale = parseLocale(req);
@@ -79,26 +86,36 @@ export async function POST(req: Request) {
       .bind(email)
       .first<{ id: string; pw_hash: string }>();
 
-    if (!user) return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401, headers: corsHeaders });
+    }
 
     const parsed = decodePasswordRecord(user.pw_hash);
-    if (!parsed?.saltHex) return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401 });
+    if (!parsed?.saltHex) {
+      return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401, headers: corsHeaders });
+    }
 
     const derived = await hashPassword(password, parsed.saltHex);
-    if (derived !== parsed.hashHex) return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401 });
+    if (derived !== parsed.hashHex) {
+      return NextResponse.json({ ok: false, error: invalidMessage }, { status: 401, headers: corsHeaders });
+    }
 
-    const res = NextResponse.json({ ok: true, user_id: user.id });
+    const res = NextResponse.json({ ok: true, user_id: user.id }, { headers: corsHeaders });
     res.cookies.set('uid', user.id, {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
     return res;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message }, { status: 500, headers: corsHeaders });
   }
 }
 
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'), { allowCredentials: true });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}

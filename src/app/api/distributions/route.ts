@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { generateLinkCode } from '@/lib/code';
 import { deleteDownloadStatsForLink, ensureDownloadStatsTable } from '@/lib/downloads';
 import { normalizeLanguageCode } from '@/lib/language';
+import { buildCorsHeaders } from '@/lib/cors';
 import {
   cleanupRegionalUploads,
   publishLinkToRegionalServer,
@@ -108,9 +109,13 @@ function sanitizeTitleFromKey(key: string): string | null {
 }
 
 export async function POST(req: Request) {
+  const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const uid = parseUid(req);
   if (!uid) {
-    return NextResponse.json({ ok: false, error: 'UNAUTHENTICATED' }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: 'UNAUTHENTICATED' },
+      { status: 401, headers: corsHeaders }
+    );
   }
 
   const { env } = getCloudflareContext();
@@ -118,18 +123,27 @@ export async function POST(req: Request) {
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;
   if (!DB) {
-    return NextResponse.json({ ok: false, error: 'Missing DB binding' }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'Missing DB binding' },
+      { status: 500, headers: corsHeaders }
+    );
   }
 
   let payload: FinalizeBody | undefined;
   try {
     payload = (await req.json()) as FinalizeBody;
   } catch {
-    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PAYLOAD' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   if (!payload) {
-    return NextResponse.json({ ok: false, error: 'INVALID_PAYLOAD' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_PAYLOAD' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const {
@@ -146,10 +160,16 @@ export async function POST(req: Request) {
   } = payload;
 
   if (!linkId || typeof linkId !== 'string') {
-    return NextResponse.json({ ok: false, error: 'INVALID_LINK_ID' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'INVALID_LINK_ID' },
+      { status: 400, headers: corsHeaders }
+    );
   }
   if (!Array.isArray(uploadsInput) || uploadsInput.length === 0) {
-    return NextResponse.json({ ok: false, error: 'NO_FILES' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'NO_FILES' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const uploads: UploadInput[] = []
@@ -168,7 +188,10 @@ export async function POST(req: Request) {
   }
 
   if (!uploads.length) {
-    return NextResponse.json({ ok: false, error: 'NO_FILES' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'NO_FILES' },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   if (autofill) {
@@ -178,7 +201,10 @@ export async function POST(req: Request) {
     if (bundleValues.length > 1) {
       const unique = new Set(bundleValues);
       if (unique.size > 1) {
-        return NextResponse.json({ ok: false, error: 'AUTOFILL_MISMATCH' }, { status: 400 });
+        return NextResponse.json(
+          { ok: false, error: 'AUTOFILL_MISMATCH' },
+          { status: 400, headers: corsHeaders }
+        );
       }
     }
   }
@@ -199,7 +225,10 @@ export async function POST(req: Request) {
   const useRegionalBackend = Boolean(regionalArea);
   const platformString = uploads.map((upload) => upload.platform).join(',');
   if (!useRegionalBackend && !R2) {
-    return NextResponse.json({ ok: false, error: 'Missing R2 binding' }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'Missing R2 binding' },
+      { status: 500, headers: corsHeaders }
+    );
   }
 
   const derivedTitle =
@@ -380,7 +409,7 @@ export async function POST(req: Request) {
       await publishLinkToRegionalServer(regionalArea, DB, bindings, linkId);
     }
 
-    return NextResponse.json({ ok: true, linkId, code });
+    return NextResponse.json({ ok: true, linkId, code }, { headers: corsHeaders });
   } catch (error) {
     await DB.prepare('DELETE FROM files WHERE link_id=?')
       .bind(linkId)
@@ -397,6 +426,11 @@ export async function POST(req: Request) {
       await cleanupRegionalUploads(regionalArea, bindings, pendingUploadKeys).catch(() => null);
     }
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message }, { status: 500, headers: corsHeaders });
   }
+}
+
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'), { allowCredentials: true });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

@@ -9,6 +9,7 @@ import {
   type DistributionFile,
 } from '@/lib/distribution';
 import { normalizeLanguageCode } from '@/lib/language';
+import { buildCorsHeaders } from '@/lib/cors';
 import {
   cleanupRegionalUploads,
   deleteRegionalLink,
@@ -58,8 +59,8 @@ type UpdateBody = {
 type JsonOk = { ok: true; linkId?: string; code?: string };
 type JsonError = { ok: false; error: string };
 
-const jsonError = (error: string, status = 400) =>
-  NextResponse.json<JsonError>({ ok: false, error }, { status });
+const jsonError = (error: string, status = 400, headers?: HeadersInit) =>
+  NextResponse.json<JsonError>({ ok: false, error }, { status, headers });
 
 function parseUid(req: Request): string | null {
   const cookie = req.headers.get('cookie') ?? '';
@@ -77,15 +78,16 @@ const normalizePlatform = (value: string | null | undefined) =>
 const trimOrEmpty = (value: string | null | undefined) => (value ? value.trim() : '');
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+  const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const params = await context.params;
   const linkId = String(params?.id ?? '').trim();
   if (!linkId) {
-    return jsonError('INVALID_LINK_ID', 400);
+    return jsonError('INVALID_LINK_ID', 400, corsHeaders);
   }
 
   const uid = parseUid(req);
   if (!uid) {
-    return jsonError('UNAUTHENTICATED', 401);
+    return jsonError('UNAUTHENTICATED', 401, corsHeaders);
   }
 
   const { env } = getCloudflareContext();
@@ -93,16 +95,16 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;
   if (!DB) {
-    return jsonError('Missing DB binding', 500);
+    return jsonError('Missing DB binding', 500, corsHeaders);
   }
 
   const existing = await fetchDistributionById(DB, linkId);
   if (!existing) {
-    return jsonError('NOT_FOUND', 404);
+    return jsonError('NOT_FOUND', 404, corsHeaders);
   }
 
   if (existing.ownerId !== uid) {
-    return jsonError('FORBIDDEN', 403);
+    return jsonError('FORBIDDEN', 403, corsHeaders);
   }
 
   await ensureDownloadStatsTable(DB, linkId);
@@ -111,18 +113,18 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     : null;
   const useRegionalBackend = Boolean(regionalArea);
   if (!useRegionalBackend && !R2) {
-    return jsonError('Missing R2 binding', 500);
+    return jsonError('Missing R2 binding', 500, corsHeaders);
   }
 
   let payload: UpdateBody;
   try {
     payload = (await req.json()) as UpdateBody;
   } catch {
-    return jsonError('INVALID_PAYLOAD', 400);
+    return jsonError('INVALID_PAYLOAD', 400, corsHeaders);
   }
 
   if (!payload || typeof payload !== 'object') {
-    return jsonError('INVALID_PAYLOAD', 400);
+    return jsonError('INVALID_PAYLOAD', 400, corsHeaders);
   }
 
   const uploads = Array.isArray(payload.uploads) ? payload.uploads.filter(Boolean) : [];
@@ -138,7 +140,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     typeof payload.networkArea === 'string' ? payload.networkArea : existing.networkArea
   );
   if (requestedNetworkArea !== existing.networkArea) {
-    return jsonError('NETWORK_AREA_IMMUTABLE', 400);
+    return jsonError('NETWORK_AREA_IMMUTABLE', 400, corsHeaders);
   }
   const networkArea = existing.networkArea;
 
@@ -341,7 +343,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       await publishLinkToRegionalServer(regionalArea, DB, bindings, linkId);
     }
 
-    return NextResponse.json<JsonOk>({ ok: true, linkId, code: existing.code });
+    return NextResponse.json<JsonOk>(
+      { ok: true, linkId, code: existing.code },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     if (newUploadKeys.length) {
       if (!useRegionalBackend && R2) {
@@ -359,20 +364,21 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       }
     }
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(message || 'UPDATE_FAILED', 500);
+    return jsonError(message || 'UPDATE_FAILED', 500, corsHeaders);
   }
 }
 
 export async function DELETE(_req: Request, context: { params: Promise<{ id: string }> }) {
+  const corsHeaders = buildCorsHeaders(_req.headers.get('origin'), { allowCredentials: true });
   const params = await context.params;
   const linkId = String(params?.id ?? '').trim();
   if (!linkId) {
-    return jsonError('INVALID_LINK_ID', 400);
+    return jsonError('INVALID_LINK_ID', 400, corsHeaders);
   }
 
   const uid = parseUid(_req);
   if (!uid) {
-    return jsonError('UNAUTHENTICATED', 401);
+    return jsonError('UNAUTHENTICATED', 401, corsHeaders);
   }
 
   const { env } = getCloudflareContext();
@@ -380,15 +386,15 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
   const DB = bindings.DB ?? bindings['rudl-app'];
   const R2 = bindings.R2_BUCKET;
   if (!DB) {
-    return jsonError('Missing DB binding', 500);
+    return jsonError('Missing DB binding', 500, corsHeaders);
   }
 
   const existing = await fetchDistributionById(DB, linkId);
   if (!existing) {
-    return jsonError('NOT_FOUND', 404);
+    return jsonError('NOT_FOUND', 404, corsHeaders);
   }
   if (existing.ownerId !== uid) {
-    return jsonError('FORBIDDEN', 403);
+    return jsonError('FORBIDDEN', 403, corsHeaders);
   }
 
   const deleteArea: RegionalNetworkArea | null = isRegionalNetworkArea(existing.networkArea)
@@ -396,7 +402,7 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
     : null;
   const useDeleteBackend = Boolean(deleteArea);
   if (!useDeleteBackend && !R2) {
-    return jsonError('Missing R2 binding', 500);
+    return jsonError('Missing R2 binding', 500, corsHeaders);
   }
 
   const r2Keys = existing.files
@@ -428,9 +434,17 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
       }).catch(() => null);
     }
 
-    return NextResponse.json<JsonOk>({ ok: true, linkId, code: existing.code });
+    return NextResponse.json<JsonOk>(
+      { ok: true, linkId, code: existing.code },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonError(message || 'DELETE_FAILED', 500);
+    return jsonError(message || 'DELETE_FAILED', 500, corsHeaders);
   }
+}
+
+export async function OPTIONS(request: Request) {
+  const corsHeaders = buildCorsHeaders(request.headers.get('origin'), { allowCredentials: true });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
