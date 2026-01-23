@@ -618,39 +618,37 @@ class _MembersScreenState extends State<MembersScreen> {
                 setBalance: setBalance,
                 adjustBalance: adjustBalance,
               );
-              if (mounted) {
-                final nextBalance = () {
-                  double value = member.balance;
-                  if (setBalance != null) {
-                    value = setBalance;
-                  }
-                  if (adjustBalance != null) {
-                    value += adjustBalance;
-                  }
-                  return value;
-                }();
-                setState(() {
-                  final index = _members.indexWhere((entry) => entry.id == member.id);
-                  if (index >= 0) {
-                    _members[index] = MemberRecord(
-                      id: member.id,
-                      email: member.email,
-                      role: member.role,
-                      balance: nextBalance,
-                      createdAt: member.createdAt,
-                    );
-                  }
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(const SnackBar(content: Text('Balance updated')));
-                _reload();
-              }
+              if (!context.mounted) return;
+              final nextBalance = () {
+                double value = member.balance;
+                if (setBalance != null) {
+                  value = setBalance;
+                }
+                if (adjustBalance != null) {
+                  value += adjustBalance;
+                }
+                return value;
+              }();
+              setState(() {
+                final index = _members.indexWhere((entry) => entry.id == member.id);
+                if (index >= 0) {
+                  _members[index] = MemberRecord(
+                    id: member.id,
+                    email: member.email,
+                    role: member.role,
+                    balance: nextBalance,
+                    createdAt: member.createdAt,
+                  );
+                }
+              });
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(const SnackBar(content: Text('Balance updated')));
+              _reload();
             } catch (error) {
-              if (mounted) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(error.toString())));
-              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(error.toString())));
             }
           },
         );
@@ -742,11 +740,11 @@ class MemberCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Color.fromRGBO(0, 0, 0, 0.04),
             blurRadius: 12,
-            offset: const Offset(0, 6),
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -821,11 +819,11 @@ class DistributionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Color.fromRGBO(0, 0, 0, 0.04),
             blurRadius: 12,
-            offset: const Offset(0, 6),
+            offset: Offset(0, 6),
           ),
         ],
       ),
