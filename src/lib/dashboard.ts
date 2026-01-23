@@ -3,6 +3,31 @@ import { normalizeLanguageCode, type LangCode } from '@/lib/language';
 import { normalizeNetworkArea, type NetworkArea } from './network-area';
 import { getTableInfo, hasColumn } from './distribution';
 
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'UTC',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const formatDate = (date: Date) => DATE_FORMATTER.format(date);
+
+const ensureStatsTable = async (DB: D1Database) => {
+  await DB.prepare(
+    `CREATE TABLE IF NOT EXISTS link_download_stats (
+      link_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      apk_dl INTEGER NOT NULL DEFAULT 0,
+      ipa_dl INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (link_id, date)
+    )`
+  ).run();
+  await DB.prepare(
+    `CREATE INDEX IF NOT EXISTS idx_link_download_stats_link_date
+     ON link_download_stats (link_id, date)`
+  ).run();
+};
+
 export type DashboardFile = {
   id: string;
   platform: string;
@@ -164,6 +189,31 @@ async function fetchLinksPage(
   const linkRows = (linksResult.results as LinkRow[] | undefined) ?? [];
 
   const links: DashboardLink[] = [];
+  const todayStats = new Map<string, { apk: number; ipa: number }>();
+
+  if (linkRows.length) {
+    try {
+      await ensureStatsTable(DB);
+      const today = formatDate(new Date());
+      const ids = linkRows.map((row) => row.id);
+      const placeholders = ids.map(() => '?').join(', ');
+      const result = await DB.prepare(
+        `SELECT link_id, apk_dl, ipa_dl FROM link_download_stats WHERE date=? AND link_id IN (${placeholders})`
+      )
+        .bind(today, ...ids)
+        .all<{ link_id: string; apk_dl?: number | string | null; ipa_dl?: number | string | null }>();
+      const rows = (result?.results as Array<{ link_id?: string; apk_dl?: number | string | null; ipa_dl?: number | string | null }> | undefined) ?? [];
+      rows.forEach((row) => {
+        if (!row.link_id) return;
+        todayStats.set(String(row.link_id), {
+          apk: toNumber(row.apk_dl),
+          ipa: toNumber(row.ipa_dl),
+        });
+      });
+    } catch {
+      // ignore and fallback to zeros
+    }
+  }
   for (const link of linkRows) {
     const fileRows = await DB.prepare(
       `SELECT id, platform, title, bundle_id, version, size, created_at
@@ -185,6 +235,11 @@ async function fetchLinksPage(
         createdAt: toEpochSeconds(file.created_at),
       })) ?? [];
 
+    const todayRow = todayStats.get(link.id) ?? { apk: 0, ipa: 0 };
+    const todayApkDl = todayRow.apk;
+    const todayIpaDl = todayRow.ipa;
+    const todayTotalDl = todayApkDl + todayIpaDl;
+
     links.push({
       id: link.id,
       code: link.code,
@@ -203,9 +258,9 @@ async function fetchLinksPage(
       networkArea: normalizeNetworkArea(
         hasNetworkAreaColumn ? ((link.network_area ?? null) as string | null) : null
       ),
-      todayApkDl: toNumber(link.today_apk_dl),
-      todayIpaDl: toNumber(link.today_ipa_dl),
-      todayTotalDl: toNumber(link.today_total_dl),
+      todayApkDl,
+      todayIpaDl,
+      todayTotalDl,
       totalApkDl: toNumber(link.total_apk_dl),
       totalIpaDl: toNumber(link.total_ipa_dl),
       totalTotalDl: toNumber(link.total_total_dl),

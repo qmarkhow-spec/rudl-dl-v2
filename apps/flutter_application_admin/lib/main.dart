@@ -249,7 +249,9 @@ class DistributionLink {
   final String title;
   final String platform;
   final bool isActive;
-  final int todayDownloads;
+  final int todayApkDownloads;
+  final int todayIpaDownloads;
+  final int todayTotalDownloads;
   final int totalDownloads;
   final String? apkVersion;
   final String? ipaVersion;
@@ -261,7 +263,9 @@ class DistributionLink {
     required this.title,
     required this.platform,
     required this.isActive,
-    required this.todayDownloads,
+    required this.todayApkDownloads,
+    required this.todayIpaDownloads,
+    required this.todayTotalDownloads,
     required this.totalDownloads,
     required this.apkVersion,
     required this.ipaVersion,
@@ -278,7 +282,9 @@ class DistributionLink {
       title: json['title']?.toString() ?? 'Untitled',
       platform: json['platform']?.toString() ?? '',
       isActive: json['isActive'] == true || json['isActive'] == 1,
-      todayDownloads: (json['todayTotalDl'] as num?)?.toInt() ?? 0,
+      todayApkDownloads: (json['todayApkDl'] as num?)?.toInt() ?? 0,
+      todayIpaDownloads: (json['todayIpaDl'] as num?)?.toInt() ?? 0,
+      todayTotalDownloads: (json['todayTotalDl'] as num?)?.toInt() ?? 0,
       totalDownloads: (json['totalTotalDl'] as num?)?.toInt() ?? 0,
       apkVersion: json['apkVersion']?.toString(),
       ipaVersion: json['ipaVersion']?.toString(),
@@ -833,9 +839,12 @@ class DistributionCard extends StatelessWidget {
               children: [
                 Text(link.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('Code: ${link.code} ??${link.platform}'),
+                Text('Code: ${link.code}'),
                 const SizedBox(height: 4),
-                Text('Today downloads: ${link.todayDownloads}'),
+                Text(
+                  'Today downloads: ${link.todayTotalDownloads} '
+                  '(APK: ${link.todayApkDownloads}, IPA: ${link.todayIpaDownloads})',
+                ),
                 const SizedBox(height: 4),
                 Text('APK v$apkVersion  •  IPA v$ipaVersion'),
                 const SizedBox(height: 6),
