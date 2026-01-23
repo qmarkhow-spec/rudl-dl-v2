@@ -1,6 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -248,7 +249,11 @@ class DistributionLink {
   final String title;
   final String platform;
   final bool isActive;
+  final int todayDownloads;
   final int totalDownloads;
+  final String? apkVersion;
+  final String? ipaVersion;
+  final List<DistributionFile> files;
 
   const DistributionLink({
     required this.id,
@@ -256,17 +261,48 @@ class DistributionLink {
     required this.title,
     required this.platform,
     required this.isActive,
+    required this.todayDownloads,
     required this.totalDownloads,
+    required this.apkVersion,
+    required this.ipaVersion,
+    required this.files,
   });
 
   factory DistributionLink.fromJson(Map<String, dynamic> json) {
+    final files = (json['files'] as List<dynamic>? ?? [])
+        .map((raw) => DistributionFile.fromJson(raw as Map<String, dynamic>))
+        .toList();
     return DistributionLink(
       id: json['id']?.toString() ?? '',
       code: json['code']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled',
       platform: json['platform']?.toString() ?? '',
       isActive: json['isActive'] == true || json['isActive'] == 1,
+      todayDownloads: (json['todayTotalDl'] as num?)?.toInt() ?? 0,
       totalDownloads: (json['totalTotalDl'] as num?)?.toInt() ?? 0,
+      apkVersion: json['apkVersion']?.toString(),
+      ipaVersion: json['ipaVersion']?.toString(),
+      files: files,
+    );
+  }
+}
+
+class DistributionFile {
+  final String id;
+  final String platform;
+  final String? version;
+
+  const DistributionFile({
+    required this.id,
+    required this.platform,
+    required this.version,
+  });
+
+  factory DistributionFile.fromJson(Map<String, dynamic> json) {
+    return DistributionFile(
+      id: json['id']?.toString() ?? '',
+      platform: json['platform']?.toString() ?? '',
+      version: json['version']?.toString(),
     );
   }
 }
@@ -437,7 +473,7 @@ class _AdminHomeState extends State<AdminHome> {
         index: _index,
         children: [
           MembersScreen(api: api),
-          DistributionsScreen(api: api),
+          DistributionsScreen(api: api, baseUrl: widget.authStore.baseUrl),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -619,8 +655,9 @@ class _MembersScreenState extends State<MembersScreen> {
 
 class DistributionsScreen extends StatefulWidget {
   final AdminApi api;
+  final String baseUrl;
 
-  const DistributionsScreen({super.key, required this.api});
+  const DistributionsScreen({super.key, required this.api, required this.baseUrl});
 
   @override
   State<DistributionsScreen> createState() => _DistributionsScreenState();
@@ -674,7 +711,7 @@ class _DistributionsScreenState extends State<DistributionsScreen> {
                 children: links.map((link) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: DistributionCard(link: link),
+                    child: DistributionCard(link: link, baseUrl: widget.baseUrl),
                   );
                 }).toList(),
               );
@@ -720,7 +757,7 @@ class MemberCard extends StatelessWidget {
               children: [
                 Text(member.email, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('Role: ${member.role} • Balance: ${member.balance.toStringAsFixed(0)}'),
+                Text('Role: ${member.role} ??Balance: ${member.balance.toStringAsFixed(0)}'),
               ],
             ),
           ),
@@ -736,12 +773,36 @@ class MemberCard extends StatelessWidget {
 
 class DistributionCard extends StatelessWidget {
   final DistributionLink link;
+  final String baseUrl;
 
-  const DistributionCard({super.key, required this.link});
+  const DistributionCard({super.key, required this.link, required this.baseUrl});
+
+  String _buildDownloadUrl() {
+    final sanitized = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+    return '$sanitized/d/${link.code}';
+  }
+
+  String _resolveVersion({required bool apk}) {
+    final direct = apk ? link.apkVersion : link.ipaVersion;
+    if (direct != null && direct.trim().isNotEmpty) return direct;
+    final platformHints = apk ? ['apk', 'android'] : ['ipa', 'ios'];
+    for (final file in link.files) {
+      final lower = file.platform.toLowerCase();
+      if (platformHints.any((hint) => lower.contains(hint))) {
+        if (file.version != null && file.version!.trim().isNotEmpty) {
+          return file.version!;
+        }
+      }
+    }
+    return '-';
+  }
 
   @override
   Widget build(BuildContext context) {
     final statusColor = link.isActive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final downloadUrl = _buildDownloadUrl();
+    final apkVersion = _resolveVersion(apk: true);
+    final ipaVersion = _resolveVersion(apk: false);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -772,9 +833,35 @@ class DistributionCard extends StatelessWidget {
               children: [
                 Text(link.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('Code: ${link.code} • ${link.platform}'),
+                Text('Code: ${link.code} ??${link.platform}'),
                 const SizedBox(height: 4),
-                Text('Total downloads: ${link.totalDownloads}'),
+                Text('Today downloads: ${link.todayDownloads}'),
+                const SizedBox(height: 4),
+                Text('APK v$apkVersion  •  IPA v$ipaVersion'),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        downloadUrl,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Copy link',
+                      icon: const Icon(Icons.copy, size: 18),
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: downloadUrl));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(content: Text('Link copied')));
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -787,7 +874,7 @@ class DistributionCard extends StatelessWidget {
 
 class BalanceEditor extends StatefulWidget {
   final MemberRecord member;
-  final void Function(double? setBalance, double? adjustBalance) onSubmit;
+  final Future<void> Function(double? setBalance, double? adjustBalance) onSubmit;
 
   const BalanceEditor({super.key, required this.member, required this.onSubmit});
 
@@ -798,6 +885,7 @@ class BalanceEditor extends StatefulWidget {
 class _BalanceEditorState extends State<BalanceEditor> {
   final _setController = TextEditingController();
   final _adjustController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -826,12 +914,14 @@ class _BalanceEditorState extends State<BalanceEditor> {
           TextField(
             controller: _setController,
             keyboardType: TextInputType.number,
+            enabled: !_submitting,
             decoration: const InputDecoration(labelText: 'Set balance to'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _adjustController,
             keyboardType: TextInputType.number,
+            enabled: !_submitting,
             decoration: const InputDecoration(labelText: 'Adjust balance by'),
           ),
           const SizedBox(height: 16),
@@ -839,15 +929,21 @@ class _BalanceEditorState extends State<BalanceEditor> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: _submitting ? null : () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: _submit,
-                  child: const Text('Save'),
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ),
             ],
@@ -857,7 +953,7 @@ class _BalanceEditorState extends State<BalanceEditor> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final setValue = double.tryParse(_setController.text.trim());
     final adjustValue = double.tryParse(_adjustController.text.trim());
     if (setValue == null && adjustValue == null) {
@@ -865,7 +961,12 @@ class _BalanceEditorState extends State<BalanceEditor> {
           .showSnackBar(const SnackBar(content: Text('Enter set or adjust value.')));
       return;
     }
-    widget.onSubmit(setValue, adjustValue);
+    setState(() => _submitting = true);
+    try {
+      await widget.onSubmit(setValue, adjustValue);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 }
 
@@ -900,3 +1001,4 @@ class _ErrorCard extends StatelessWidget {
     );
   }
 }
+

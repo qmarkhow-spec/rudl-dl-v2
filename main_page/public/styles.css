@@ -43,8 +43,8 @@ body {
 .brand-icon {
   width: 56px;
   height: 56px;
-  border-radius: 12px;
-  object-fit: cover;
+  border-radius: 50%;
+  object-fit: contain;
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
 }
 

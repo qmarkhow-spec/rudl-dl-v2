@@ -100,16 +100,16 @@ export default function LangNav() {
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <Link href={localePrefix || '/'} className="flex items-center gap-3 text-xl font-semibold text-gray-900">
         <Image
-          src="/images/icon.jpg"
+          src="/images/icon.png"
           alt="mycowbay icon"
           width={48}
           height={48}
-          className="h-10 w-10 rounded-sm object-cover sm:h-12 sm:w-12"
+          className="h-10 w-10 rounded-full object-contain sm:h-12 sm:w-12"
           priority
         />
         <div className="text-left">
           <Image
-            src="/images/logo.jpg"
+            src="/images/logo.png"
             alt="mycowbay logo"
             width={220}
             height={80}

@@ -93,16 +93,16 @@ export default function LoginPage() {
     <div className="mx-auto w-full max-w-md space-y-4 rounded-2xl border border-neutral-700 bg-neutral-900/80 p-6 text-white shadow-2xl shadow-black/50 backdrop-blur">
       <div className="flex items-center gap-3 border-b border-neutral-700 pb-4">
         <Image
-          src="/images/icon.jpg"
+          src="/images/icon.png"
           alt="mycowbay icon"
           width={48}
           height={48}
-          className="h-12 w-12 rounded-sm object-cover"
+          className="h-12 w-12 rounded-full object-contain"
           priority
         />
         <div>
           <Image
-            src="/images/logo.jpg"
+            src="/images/logo.png"
             alt="mycowbay logo"
             width={220}
             height={80}
