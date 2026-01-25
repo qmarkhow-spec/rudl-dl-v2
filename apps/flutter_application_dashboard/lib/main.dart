@@ -24,7 +24,7 @@ class DashboardApp extends StatelessWidget {
       brightness: Brightness.light,
     );
     return MaterialApp(
-      title: 'Mycowbay Dashboard',
+      title: 'mycowbay dashboard',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -98,7 +98,7 @@ class _DashboardShellState extends State<DashboardShell> {
     final account = widget.store.activeAccount;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mycowbay Dashboard'),
+        title: const Text('mycowbay dashboard'),
         actions: [
           if (account != null)
             Padding(

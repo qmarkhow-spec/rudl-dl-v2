@@ -12,6 +12,6 @@ import 'package:flutter_application_dashboard/main.dart';
 void main() {
   testWidgets('Dashboard app bootstraps', (WidgetTester tester) async {
     await tester.pumpWidget(const DashboardApp());
-    expect(find.text('Mycowbay Dashboard'), findsWidgets);
+    expect(find.text('mycowbay dashboard'), findsWidgets);
   });
 }
