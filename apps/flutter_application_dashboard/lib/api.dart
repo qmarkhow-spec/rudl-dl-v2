@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'http_client.dart' if (dart.library.html) 'http_client_web.dart';
 import 'models.dart';
+import 'upload_io.dart' if (dart.library.html) 'upload_web.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -171,6 +172,21 @@ class DashboardApi {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException('UPLOAD_FAILED_${response.statusCode}');
     }
+  }
+
+  Future<void> uploadFile({
+    required String uploadUrl,
+    required Map<String, String> uploadHeaders,
+    required String path,
+    required int length,
+  }) async {
+    await uploadFileStream(
+      client: _client,
+      uploadUrl: uploadUrl,
+      uploadHeaders: uploadHeaders,
+      path: path,
+      length: length,
+    );
   }
 
   Future<void> createDistribution({

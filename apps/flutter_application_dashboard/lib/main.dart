@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'account_store.dart';
 import 'api.dart';
+import 'http_client.dart' if (dart.library.html) 'http_client_web.dart';
 import 'models.dart';
 
 const String kCnDownloadBase = 'https://cn-d.mycowbay.com';
@@ -1105,11 +1106,11 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: platform == 'apk' ? const ['apk'] : const ['ipa'],
-      withData: true,
+      withData: kIsWebClient,
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.bytes == null) {
+    if (kIsWebClient && file.bytes == null) {
       if (!mounted) return;
       setState(() => _error = 'File read failed');
       return;
@@ -1162,11 +1163,24 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
           networkArea: _networkArea,
         );
         linkId = ticket.linkId;
-        await widget.api.uploadBytes(
-          uploadUrl: ticket.uploadUrl,
-          uploadHeaders: ticket.uploadHeaders,
-          bytes: selection.file.bytes!,
-        );
+        if (kIsWebClient) {
+          await widget.api.uploadBytes(
+            uploadUrl: ticket.uploadUrl,
+            uploadHeaders: ticket.uploadHeaders,
+            bytes: selection.file.bytes!,
+          );
+        } else {
+          final path = selection.file.path;
+          if (path == null || path.isEmpty) {
+            throw ApiException('FILE_PATH_MISSING');
+          }
+          await widget.api.uploadFile(
+            uploadUrl: ticket.uploadUrl,
+            uploadHeaders: ticket.uploadHeaders,
+            path: path,
+            length: selection.file.size,
+          );
+        }
         uploads.add(ticket.payload);
       }
 
