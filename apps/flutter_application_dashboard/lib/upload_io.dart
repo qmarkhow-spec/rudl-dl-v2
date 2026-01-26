@@ -6,21 +6,39 @@ Future<void> uploadFileStream({
   required http.Client client,
   required String uploadUrl,
   required Map<String, String> uploadHeaders,
-  required String path,
+  String? path,
+  Stream<List<int>>? stream,
   required int length,
+  void Function(int sent, int total)? onProgress,
 }) async {
-  final file = File(path);
-  final request = http.StreamedRequest('PUT', Uri.parse(uploadUrl));
-  request.headers.addAll(uploadHeaders);
+  if (stream == null) {
+    if (path == null || path.isEmpty) {
+      throw Exception('FILE_PATH_MISSING');
+    }
+    stream = File(path).openRead();
+  }
+
+  final uri = Uri.parse(uploadUrl);
+  final ioClient = HttpClient();
+  ioClient.connectionTimeout = const Duration(minutes: 5);
+  final request = await ioClient.openUrl('PUT', uri);
+  request.bufferOutput = false;
   request.contentLength = length;
-  final stream = file.openRead();
-  stream.listen(
-    request.sink.add,
-    onDone: request.sink.close,
-    onError: request.sink.addError,
-    cancelOnError: true,
-  );
-  final response = await client.send(request);
+  uploadHeaders.forEach((key, value) {
+    request.headers.set(key, value);
+  });
+
+  int sent = 0;
+  await stream.forEach((chunk) {
+    sent += chunk.length;
+    if (onProgress != null) {
+      onProgress(sent, length);
+    }
+    request.add(chunk);
+  });
+
+  final response = await request.close();
+  ioClient.close(force: true);
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw Exception('UPLOAD_FAILED_${response.statusCode}');
   }

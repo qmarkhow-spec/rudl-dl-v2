@@ -177,15 +177,19 @@ class DashboardApi {
   Future<void> uploadFile({
     required String uploadUrl,
     required Map<String, String> uploadHeaders,
-    required String path,
+    String? path,
+    Stream<List<int>>? stream,
     required int length,
+    void Function(int sent, int total)? onProgress,
   }) async {
     await uploadFileStream(
       client: _client,
       uploadUrl: uploadUrl,
       uploadHeaders: uploadHeaders,
       path: path,
+      stream: stream,
       length: length,
+      onProgress: onProgress,
     );
   }
 

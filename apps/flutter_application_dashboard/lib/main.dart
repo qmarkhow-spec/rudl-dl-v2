@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,13 +7,21 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'account_store.dart';
 import 'api.dart';
+import 'file_cache.dart';
+import 'foreground_service.dart';
 import 'http_client.dart' if (dart.library.html) 'http_client_web.dart';
 import 'models.dart';
+import 'notification_service.dart';
+import 'upload_manager.dart';
 
 const String kCnDownloadBase = 'https://cn-d.mycowbay.com';
 const String kRuDownloadBase = 'https://ru-d.mycowbay.com';
+final UploadManager uploadManager = UploadManager();
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ForegroundService.init();
+  await NotificationService.init();
   runApp(const DashboardApp());
 }
 
@@ -76,7 +86,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        return DashboardShell(store: _store);
+        return DashboardShell(store: _store, uploadManager: uploadManager);
       },
     );
   }
@@ -84,8 +94,9 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
 class DashboardShell extends StatefulWidget {
   final AccountStore store;
+  final UploadManager uploadManager;
 
-  const DashboardShell({super.key, required this.store});
+  const DashboardShell({super.key, required this.store, required this.uploadManager});
 
   @override
   State<DashboardShell> createState() => _DashboardShellState();
@@ -96,41 +107,73 @@ class _DashboardShellState extends State<DashboardShell> {
 
   @override
   Widget build(BuildContext context) {
-    final account = widget.store.activeAccount;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('mycowbay dashboard'),
-        actions: [
-          if (account != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Text(
-                  account.email,
-                  style: const TextStyle(fontSize: 12),
+    return AnimatedBuilder(
+      animation: widget.uploadManager,
+      builder: (context, _) {
+        final account = widget.store.activeAccount;
+        final upload = widget.uploadManager;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('mycowbay dashboard'),
+            bottom: upload.isBusy
+                ? PreferredSize(
+                    preferredSize: const Size.fromHeight(28),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: upload.current?.progress,
+                              minHeight: 4,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${((upload.current?.progress ?? 0) * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : null,
+            actions: [
+              if (account != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: Text(
+                      account.email,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _index,
-        children: [
-          DistributionListScreen(
-            key: ValueKey(account?.id ?? 'none'),
-            account: account,
+            ],
           ),
-          AccountsScreen(store: widget.store),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.list_alt), label: 'List'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Accounts'),
-        ],
-      ),
+          body: IndexedStack(
+            index: _index,
+            children: [
+              DistributionListScreen(
+                key: ValueKey(account?.id ?? 'none'),
+                account: account,
+                uploadManager: widget.uploadManager,
+              ),
+              AccountsScreen(store: widget.store),
+              UploadsScreen(manager: widget.uploadManager),
+            ],
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (value) => setState(() => _index = value),
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.list_alt), label: 'List'),
+              NavigationDestination(icon: Icon(Icons.person), label: 'Accounts'),
+              NavigationDestination(icon: Icon(Icons.cloud_upload), label: 'Uploads'),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -349,8 +392,9 @@ class _LoginDialogState extends State<LoginDialog> {
 
 class DistributionListScreen extends StatefulWidget {
   final AccountRecord? account;
+  final UploadManager uploadManager;
 
-  const DistributionListScreen({super.key, required this.account});
+  const DistributionListScreen({super.key, required this.account, required this.uploadManager});
 
   @override
   State<DistributionListScreen> createState() => _DistributionListScreenState();
@@ -362,6 +406,7 @@ class _DistributionListScreenState extends State<DistributionListScreen> {
   String? _error;
   int _pageNumber = 1;
   final int _pageSize = 10;
+  StreamSubscription<UploadEvent>? _uploadSub;
 
   DashboardApi? get _api => widget.account == null
       ? null
@@ -371,6 +416,29 @@ class _DistributionListScreenState extends State<DistributionListScreen> {
   void initState() {
     super.initState();
     _load();
+    _uploadSub = widget.uploadManager.events.listen((event) {
+      if (event.type == UploadEventType.success &&
+          widget.account?.id == event.job.account.id) {
+        _load(page: _pageNumber);
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Upload completed')));
+        }
+      }
+      if (event.type == UploadEventType.failed &&
+          widget.account?.id == event.job.account.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(event.job.error ?? 'Upload failed')));
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _uploadSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load({int page = 1}) async {
@@ -486,7 +554,12 @@ class _DistributionListScreenState extends State<DistributionListScreen> {
     if (_api == null) return;
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => DistributionFormScreen(api: _api!, baseUrl: widget.account!.baseUrl),
+        builder: (_) => DistributionFormScreen(
+          api: _api!,
+          baseUrl: widget.account!.baseUrl,
+          uploadManager: widget.uploadManager,
+          account: widget.account!,
+        ),
       ),
     );
     if (created == true) {
@@ -502,6 +575,8 @@ class _DistributionListScreenState extends State<DistributionListScreen> {
           api: _api!,
           baseUrl: widget.account!.baseUrl,
           link: link,
+          uploadManager: widget.uploadManager,
+          account: widget.account!,
         ),
       ),
     );
@@ -798,6 +873,175 @@ class _ErrorCard extends StatelessWidget {
   }
 }
 
+class UploadsScreen extends StatelessWidget {
+  final UploadManager manager;
+
+  const UploadsScreen({super.key, required this.manager});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: manager,
+      builder: (context, _) {
+        final current = manager.current;
+        final queue = manager.queue;
+        final history = manager.history;
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Text(
+              'Upload Queue',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            if (current != null) _UploadJobCard(job: current, title: 'Uploading now'),
+            if (current == null)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No active uploads.'),
+                ),
+              ),
+            if (queue.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...queue.map((job) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _UploadJobCard(job: job, title: 'Queued'),
+                  )),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'History',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton(
+                  onPressed: manager.clearHistory,
+                  child: const Text('Clear'),
+                ),
+              ],
+            ),
+            if (history.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No uploads yet.'),
+                ),
+              )
+            else
+              ...history.map((job) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _UploadJobCard(job: job, title: 'Completed'),
+                  )),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _UploadJobCard extends StatelessWidget {
+  final UploadJob job;
+  final String title;
+
+  const _UploadJobCard({required this.job, required this.title});
+
+  Color _statusColor() {
+    switch (job.status) {
+      case UploadJobStatus.success:
+        return const Color(0xFF16A34A);
+      case UploadJobStatus.failed:
+        return const Color(0xFFDC2626);
+      case UploadJobStatus.uploading:
+        return const Color(0xFF2563EB);
+      case UploadJobStatus.queued:
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
+  String _statusText() {
+    switch (job.status) {
+      case UploadJobStatus.success:
+        return 'Success';
+      case UploadJobStatus.failed:
+        return 'Failed';
+      case UploadJobStatus.uploading:
+        return 'Uploading';
+      case UploadJobStatus.queued:
+      default:
+        return 'Queued';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final percent =
+        ((job.progress) * 100).clamp(0, 100).toStringAsFixed(0);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _statusColor().withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _statusText(),
+                    style: TextStyle(color: _statusColor(), fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text('Title: ${job.title.isEmpty ? '-' : job.title}'),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(child: LinearProgressIndicator(value: job.progress)),
+                const SizedBox(width: 8),
+                Text('$percent%', style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+            if (job.error != null) ...[
+              const SizedBox(height: 6),
+              Text(job.error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ],
+            const SizedBox(height: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: job.files.map((file) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '${file.platform.toUpperCase()} • ${file.fileName} • ${formatSize(file.size)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class StatsDialog extends StatefulWidget {
   final DashboardApi api;
   final DashboardLink link;
@@ -898,11 +1142,15 @@ class DistributionFormScreen extends StatefulWidget {
   final DashboardApi api;
   final DashboardLink? link;
   final String baseUrl;
+  final UploadManager uploadManager;
+  final AccountRecord account;
 
   const DistributionFormScreen({
     super.key,
     required this.api,
     required this.baseUrl,
+    required this.uploadManager,
+    required this.account,
     this.link,
   });
 
@@ -1103,19 +1351,54 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
   }
 
   Future<void> _pickFile(String platform) async {
+    final FileType pickerType;
+    final List<String>? extensions;
+    if (platform == 'apk') {
+      pickerType = FileType.custom;
+      extensions = const ['apk'];
+    } else if (kIsWebClient) {
+      pickerType = FileType.custom;
+      extensions = const ['ipa'];
+    } else {
+      pickerType = FileType.any;
+      extensions = null;
+    }
+
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: platform == 'apk' ? const ['apk'] : const ['ipa'],
+      type: pickerType,
+      allowedExtensions: extensions,
       withData: kIsWebClient,
+      withReadStream: !kIsWebClient,
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
+    if (platform == 'ipa' && !kIsWebClient) {
+      final lowerExt = (file.extension ?? '').toLowerCase();
+      final lowerPath = (file.path ?? '').toLowerCase();
+      final isIpa = lowerExt == 'ipa' || lowerPath.endsWith('.ipa');
+      if (!isIpa) {
+        if (!mounted) return;
+        setState(() => _error = 'Please select an .ipa file.');
+        return;
+      }
+    }
     if (kIsWebClient && file.bytes == null) {
       if (!mounted) return;
       setState(() => _error = 'File read failed');
       return;
     }
-    final selection = FileSelection(platform: platform, file: file);
+    final localInfo = kIsWebClient ? null : await cacheFile(file);
+    if (!kIsWebClient && localInfo == null) {
+      if (!mounted) return;
+      setState(() => _error = 'File read failed. Please reselect the file.');
+      return;
+    }
+    final selection = FileSelection(
+      platform: platform,
+      file: file,
+      localPath: localInfo?.path,
+      localSize: localInfo?.size ?? file.size,
+    );
     setState(() {
       _error = null;
       if (platform == 'apk') {
@@ -1125,6 +1408,7 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
       }
     });
   }
+
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -1137,85 +1421,41 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
       _error = null;
     });
     try {
-      final uploads = <UploadPayload>[];
-      String? linkId = widget.link?.id;
-
       final selections = [
         if (_apkFile != null) _apkFile!,
         if (_ipaFile != null) _ipaFile!,
       ];
 
-      for (final selection in selections) {
-        final contentType = selection.platform == 'apk'
-            ? 'application/vnd.android.package-archive'
-            : 'application/octet-stream';
-        final ticket = await widget.api.requestUpload(
+      final files = selections.map((selection) {
+        return UploadFile(
           platform: selection.platform,
           fileName: selection.file.name,
-          size: selection.file.size,
-          contentType: contentType,
-          title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
-          bundleId: _bundleController.text.trim().isEmpty ? null : _bundleController.text.trim(),
-          version: selection.platform == 'apk'
-              ? (_apkController.text.trim().isEmpty ? null : _apkController.text.trim())
-              : (_ipaController.text.trim().isEmpty ? null : _ipaController.text.trim()),
-          linkId: linkId,
-          networkArea: _networkArea,
+          size: selection.localSize,
+          bytes: kIsWebClient ? selection.file.bytes : null,
+          path: selection.localPath ?? selection.file.path,
+          stream: selection.localPath == null ? selection.file.readStream : null,
         );
-        linkId = ticket.linkId;
-        if (kIsWebClient) {
-          await widget.api.uploadBytes(
-            uploadUrl: ticket.uploadUrl,
-            uploadHeaders: ticket.uploadHeaders,
-            bytes: selection.file.bytes!,
-          );
-        } else {
-          final path = selection.file.path;
-          if (path == null || path.isEmpty) {
-            throw ApiException('FILE_PATH_MISSING');
-          }
-          await widget.api.uploadFile(
-            uploadUrl: ticket.uploadUrl,
-            uploadHeaders: ticket.uploadHeaders,
-            path: path,
-            length: selection.file.size,
-          );
-        }
-        uploads.add(ticket.payload);
-      }
+      }).toList();
 
-      if (linkId == null || linkId.isEmpty) {
-        throw ApiException('LINK_ID_MISSING');
-      }
-
-      if (_isEdit) {
-        await widget.api.updateDistribution(
-          linkId: linkId,
-          title: _titleController.text.trim(),
-          bundleId: _bundleController.text.trim(),
-          apkVersion: _apkController.text.trim(),
-          ipaVersion: _ipaController.text.trim(),
-          autofill: _autofill,
-          lang: _language,
-          uploads: uploads,
-          isActive: _isActive,
-          networkArea: _networkArea,
-        );
-      } else {
-        await widget.api.createDistribution(
-          linkId: linkId,
-          title: _titleController.text.trim(),
-          bundleId: _bundleController.text.trim(),
-          apkVersion: _apkController.text.trim(),
-          ipaVersion: _ipaController.text.trim(),
-          autofill: _autofill,
-          lang: _language,
-          uploads: uploads,
-          isActive: _isActive,
-          networkArea: _networkArea,
-        );
-      }
+      final job = UploadJob(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        account: widget.account,
+        isEdit: _isEdit,
+        linkId: widget.link?.id,
+        title: _titleController.text.trim(),
+        bundleId: _bundleController.text.trim(),
+        apkVersion: _apkController.text.trim(),
+        ipaVersion: _ipaController.text.trim(),
+        autofill: _autofill,
+        lang: _language,
+        isActive: _isActive,
+        networkArea: _networkArea,
+        files: files,
+      );
+      widget.uploadManager.enqueue(job);
       if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Upload queued')));
       Navigator.of(context).pop(true);
     } catch (error) {
       setState(() => _error = error.toString());
@@ -1228,6 +1468,13 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
 class FileSelection {
   final String platform;
   final PlatformFile file;
+  final String? localPath;
+  final int localSize;
 
-  const FileSelection({required this.platform, required this.file});
+  const FileSelection({
+    required this.platform,
+    required this.file,
+    required this.localPath,
+    required this.localSize,
+  });
 }
