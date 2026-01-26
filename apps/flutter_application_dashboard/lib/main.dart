@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1381,23 +1382,38 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
   Future<void> _pickFile(String platform) async {
     final FileType pickerType;
     final List<String>? extensions;
+    final bool isAndroid = !kIsWebClient && defaultTargetPlatform == TargetPlatform.android;
     if (platform == 'apk') {
       pickerType = FileType.custom;
       extensions = const ['apk'];
     } else if (kIsWebClient) {
       pickerType = FileType.custom;
       extensions = const ['ipa'];
-    } else {
+    } else if (isAndroid) {
       pickerType = FileType.any;
       extensions = null;
+    } else {
+      pickerType = FileType.custom;
+      extensions = const ['ipa'];
     }
 
-    final result = await FilePicker.platform.pickFiles(
-      type: pickerType,
-      allowedExtensions: extensions,
-      withData: kIsWebClient,
-      withReadStream: !kIsWebClient,
-    );
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: pickerType,
+        allowedExtensions: extensions,
+        withData: kIsWebClient,
+        withReadStream: !kIsWebClient,
+      );
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'File picker failed: ${error.message ?? error.code}');
+      return;
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'File picker failed: $error');
+      return;
+    }
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
     if (platform == 'ipa' && !kIsWebClient) {
@@ -1480,6 +1496,14 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
     if (!_isEdit && _apkFile == null && _ipaFile == null) {
       setState(() => _error = 'Please select at least one file.');
       return;
+    }
+    if (_autofill) {
+      final apkBundle = (_apkMeta?.bundleId ?? '').trim();
+      final ipaBundle = (_ipaMeta?.bundleId ?? '').trim();
+      if (apkBundle.isNotEmpty && ipaBundle.isNotEmpty && apkBundle != ipaBundle) {
+        setState(() => _error = 'AUTOFILL_MISMATCH');
+        return;
+      }
     }
     setState(() {
       _submitting = true;

@@ -35,7 +35,7 @@ Future<PackageMetadata?> readIpaMetadata(String path) async {
     final input = InputFileStream(path);
     final archive = ZipDecoder().decodeBuffer(input, verify: true);
     ArchiveFile? plistFile;
-    final matcher = RegExp(r'Payload/[^/]+\\.app/Info\\.plist$', caseSensitive: false);
+    final matcher = RegExp(r'Payload/[^/]+\.app/Info\.plist$', caseSensitive: false);
     for (final file in archive) {
       if (matcher.hasMatch(file.name)) {
         plistFile = file;
