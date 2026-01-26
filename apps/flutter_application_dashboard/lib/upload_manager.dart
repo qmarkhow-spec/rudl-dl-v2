@@ -7,6 +7,7 @@ import 'http_client.dart' if (dart.library.html) 'http_client_web.dart';
 import 'models.dart';
 import 'foreground_service.dart';
 import 'notification_service.dart';
+import 'file_cache.dart' as cache;
 
 enum UploadJobStatus { queued, uploading, success, failed }
 
@@ -26,6 +27,9 @@ class UploadFile {
   final List<int>? bytes;
   final String? path;
   final Stream<List<int>>? stream;
+  final String? metaTitle;
+  final String? metaBundleId;
+  final String? metaVersion;
 
   double progress = 0;
   String? error;
@@ -37,6 +41,9 @@ class UploadFile {
     required this.bytes,
     required this.path,
     required this.stream,
+    required this.metaTitle,
+    required this.metaBundleId,
+    required this.metaVersion,
   });
 }
 
@@ -100,6 +107,28 @@ class UploadManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<int> clearCachedFiles() async {
+    final exclude = <String>{};
+    for (final job in _queue) {
+      for (final file in job.files) {
+        final path = file.path;
+        if (path != null && path.isNotEmpty) {
+          exclude.add(path);
+        }
+      }
+    }
+    final active = _current;
+    if (active != null) {
+      for (final file in active.files) {
+        final path = file.path;
+        if (path != null && path.isNotEmpty) {
+          exclude.add(path);
+        }
+      }
+    }
+    return cache.clearCachedFiles(exclude);
+  }
+
   Future<void> _process() async {
     if (_processing) return;
     _processing = true;
@@ -152,16 +181,35 @@ class UploadManager extends ChangeNotifier {
         final contentType = file.platform == 'apk'
             ? 'application/vnd.android.package-archive'
             : 'application/octet-stream';
+        final metaTitle = (file.metaTitle ?? '').trim();
+        final metaBundleId = (file.metaBundleId ?? '').trim();
+        final metaVersion = (file.metaVersion ?? '').trim();
+        if (file.platform == 'ipa' &&
+            (metaBundleId.isEmpty || metaVersion.isEmpty)) {
+          throw ApiException('IPA_METADATA_MISSING');
+        }
         final ticket = await api.requestUpload(
           platform: file.platform,
           fileName: file.fileName,
           size: file.size,
           contentType: contentType,
-          title: job.title.isEmpty ? null : job.title,
-          bundleId: job.bundleId.isEmpty ? null : job.bundleId,
-          version: file.platform == 'apk'
-              ? (job.apkVersion.isEmpty ? null : job.apkVersion)
-              : (job.ipaVersion.isEmpty ? null : job.ipaVersion),
+          title: metaTitle.isNotEmpty
+              ? metaTitle
+              : file.platform == 'ipa'
+                  ? null
+                  : (job.title.isEmpty ? null : job.title),
+          bundleId: metaBundleId.isNotEmpty
+              ? metaBundleId
+              : file.platform == 'ipa'
+                  ? null
+                  : (job.bundleId.isEmpty ? null : job.bundleId),
+          version: metaVersion.isNotEmpty
+              ? metaVersion
+              : file.platform == 'ipa'
+                  ? null
+                  : file.platform == 'apk'
+                      ? (job.apkVersion.isEmpty ? null : job.apkVersion)
+                      : (job.ipaVersion.isEmpty ? null : job.ipaVersion),
           linkId: linkId,
           networkArea: job.networkArea,
         );

@@ -93,23 +93,21 @@ export async function GET(
   const hasApk = Boolean(apkFile);
   const hasIpa = Boolean(ipaFile);
 
-  const displayTitle =
-    ipaFile?.title ?? link.title ?? apkFile?.title ?? DEFAULT_APP_TITLE;
-  const displayBundleId =
-    ipaFile?.bundleId ?? link.bundleId ?? apkFile?.bundleId ?? '';
+  const displayTitle = (link.title ?? '').trim() || DEFAULT_APP_TITLE;
+  const displayBundleId = (link.bundleId ?? '').trim();
+  const displayApkVersion = (link.apkVersion ?? '').trim();
+  const displayIpaVersion = (link.ipaVersion ?? '').trim();
 
-  const androidVersion = apkFile?.version ?? link.apkVersion ?? '';
-  const iosVersion = ipaFile?.version ?? link.ipaVersion ?? '';
+  const iosInstallVersion = (ipaFile?.version ?? '').trim();
+  const iosInstallBundleId = (ipaFile?.bundleId ?? '').trim();
 
   const androidSizeValue = typeof apkFile?.size === 'number' ? apkFile.size : null;
   const iosSizeValue = typeof ipaFile?.size === 'number' ? ipaFile.size : null;
 
-  const iosBundleId = ipaFile?.bundleId ?? '';
-
   const missing: string[] = [];
   if (hasIpa) {
-    if (!iosVersion) missing.push('Version');
-    if (!iosBundleId) missing.push('Bundle ID');
+    if (!iosInstallVersion) missing.push('Version');
+    if (!iosInstallBundleId) missing.push('Bundle ID');
   }
   const disableIos = !hasIpa || missing.length > 0;
 
@@ -135,21 +133,20 @@ export async function GET(
   const hrefIos = hasIpa ? `/dl/${encodeURIComponent(link.code)}?p=ipa` : '';
 
   const developerName =
-    ipaFile?.bundleId ??
-    link.bundleId ??
-    displayTitle ??
+    iosInstallBundleId ||
+    displayTitle ||
     dl('enterpriseDev');
 
   const buildVersionMarkup = () => {
     const segments: string[] = [];
     if (hasApk) {
       segments.push(
-        `<div>${h(dl('androidApk'))}: ${h(formatVersionValue(androidVersion))}</div>`
+        `<div>${h(dl('androidApk'))}: ${h(formatVersionValue(displayApkVersion))}</div>`
       );
     }
     if (hasIpa) {
       segments.push(
-        `<div>${h(dl('iosIpa'))}: ${h(formatVersionValue(iosVersion))}</div>`
+        `<div>${h(dl('iosIpa'))}: ${h(formatVersionValue(displayIpaVersion))}</div>`
       );
     }
     return segments.length ? segments.join('') : `<span class="muted">-</span>`;

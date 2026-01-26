@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'account_store.dart';
 import 'api.dart';
 import 'file_cache.dart';
+import 'package_metadata.dart';
 import 'foreground_service.dart';
 import 'http_client.dart' if (dart.library.html) 'http_client_web.dart';
 import 'models.dart';
@@ -889,9 +890,26 @@ class UploadsScreen extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
-              'Upload Queue',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Upload Queue',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final removed = await manager.clearCachedFiles();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Cleared $removed cached file(s).')),
+                    );
+                  },
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Clear cache'),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (current != null) _UploadJobCard(job: current, title: 'Uploading now'),
@@ -1172,6 +1190,8 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
   String? _error;
   FileSelection? _apkFile;
   FileSelection? _ipaFile;
+  PackageMetadata? _apkMeta;
+  PackageMetadata? _ipaMeta;
 
   bool get _isEdit => widget.link != null;
 
@@ -1186,6 +1206,8 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
     _language = link?.language ?? 'en';
     _networkArea = link?.networkArea ?? 'global';
     _isActive = link?.isActive ?? true;
+    _apkMeta = null;
+    _ipaMeta = null;
   }
 
   @override
@@ -1268,7 +1290,13 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
             SwitchListTile(
               title: const Text('Autofill from package'),
               value: _autofill,
-              onChanged: (value) => setState(() => _autofill = value),
+              onChanged: (value) {
+                setState(() => _autofill = value);
+                if (value) {
+                  _applyAutofill(_apkMeta, 'apk');
+                  _applyAutofill(_ipaMeta, 'ipa');
+                }
+              },
             ),
             const SizedBox(height: 12),
             _buildFilePicker(
@@ -1407,6 +1435,43 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
         _ipaFile = selection;
       }
     });
+    final path = selection.localPath ?? selection.file.path ?? '';
+    if (path.isNotEmpty) {
+      final meta = platform == 'apk'
+          ? await ApkMetadataReader.read(path)
+          : await readIpaMetadata(path);
+      if (!mounted) return;
+      setState(() {
+        if (platform == 'apk') {
+          _apkMeta = meta;
+        } else {
+          _ipaMeta = meta;
+        }
+      });
+      _applyAutofill(meta, platform);
+    }
+  }
+
+  void _applyAutofill(PackageMetadata? meta, String platform) {
+    if (!_autofill || meta == null) return;
+    final title = meta.title?.trim() ?? '';
+    final bundleId = meta.bundleId?.trim() ?? '';
+    final version = meta.version?.trim() ?? '';
+    if (title.isNotEmpty) {
+      _titleController.text = title;
+    }
+    if (bundleId.isNotEmpty) {
+      _bundleController.text = bundleId;
+    }
+    if (version.isNotEmpty) {
+      if (platform == 'apk') {
+        _apkController.text = version;
+      }
+      if (platform == 'ipa') {
+        _ipaController.text = version;
+      }
+    }
+    setState(() {});
   }
 
 
@@ -1427,6 +1492,8 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
       ];
 
       final files = selections.map((selection) {
+        final meta =
+            selection.platform == 'apk' ? _apkMeta : _ipaMeta;
         return UploadFile(
           platform: selection.platform,
           fileName: selection.file.name,
@@ -1434,6 +1501,9 @@ class _DistributionFormScreenState extends State<DistributionFormScreen> {
           bytes: kIsWebClient ? selection.file.bytes : null,
           path: selection.localPath ?? selection.file.path,
           stream: selection.localPath == null ? selection.file.readStream : null,
+          metaTitle: meta?.title,
+          metaBundleId: meta?.bundleId,
+          metaVersion: meta?.version,
         );
       }).toList();
 

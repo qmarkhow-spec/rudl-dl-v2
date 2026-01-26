@@ -231,24 +231,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const derivedTitle =
-    (autofill && uploads.find((upload) => upload.title)?.title?.trim()) ||
-    titleInput ||
-    DEFAULT_TITLE;
-  const derivedBundleId =
-    (autofill && uploads.find((upload) => upload.bundleId)?.bundleId?.trim()) ||
-    bundleIdInput ||
-    '';
-  const derivedApkVersion =
-    (autofill &&
-      uploads.find((upload) => upload.platform === 'apk' && upload.version)?.version?.trim()) ||
-    apkVersionInput ||
-    '';
-  const derivedIpaVersion =
-    (autofill &&
-      uploads.find((upload) => upload.platform === 'ipa' && upload.version)?.version?.trim()) ||
-    ipaVersionInput ||
-    '';
+  const derivedTitle = titleInput || DEFAULT_TITLE;
+  const derivedBundleId = bundleIdInput || '';
+  const derivedApkVersion = apkVersionInput || '';
+  const derivedIpaVersion = ipaVersionInput || '';
 
   const pendingUploadKeys = useRegionalBackend ? uploads.map((upload) => upload.key) : [];
   const code = generateLinkCode();
@@ -323,6 +309,9 @@ export async function POST(req: Request) {
       const metaTitle = upload.title?.trim() || sanitizeTitleFromKey(upload.key);
       const metaBundleId = upload.bundleId?.trim() ?? '';
       const metaVersion = upload.version?.trim() ?? '';
+      if (upload.platform === 'ipa' && (!metaBundleId || !metaVersion)) {
+        throw new Error('IPA_METADATA_MISSING');
+      }
 
       const fileColumnPairs: Array<[string, unknown]> = [
         ['id', fileId],

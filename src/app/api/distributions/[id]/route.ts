@@ -77,6 +77,12 @@ const normalizePlatform = (value: string | null | undefined) =>
 
 const trimOrEmpty = (value: string | null | undefined) => (value ? value.trim() : '');
 
+function sanitizeTitleFromKey(key: string): string | null {
+  const parts = key.split('/');
+  const fileName = parts[parts.length - 1] ?? '';
+  return fileName.replace(/^\d+-/, '').replace(/\.[^.]+$/, '') || null;
+}
+
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   const corsHeaders = buildCorsHeaders(req.headers.get('origin'), { allowCredentials: true });
   const params = await context.params;
@@ -160,10 +166,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
   }
 
   if (autofill) {
-    const apkBundle = trimOrEmpty(uploadMap.get('apk')?.bundleId ?? existingFiles.get('apk')?.bundleId);
-    const ipaBundle = trimOrEmpty(uploadMap.get('ipa')?.bundleId ?? existingFiles.get('ipa')?.bundleId);
-    if (apkBundle && ipaBundle && apkBundle !== ipaBundle) {
-      return jsonError('AUTOFILL_MISMATCH', 400);
+    const bundleValues = Array.from(uploadMap.values())
+      .map((entry) => entry.bundleId?.trim())
+      .filter((value): value is string => Boolean(value));
+    if (bundleValues.length > 1) {
+      const unique = new Set(bundleValues);
+      if (unique.size > 1) {
+        return jsonError('AUTOFILL_MISMATCH', 400);
+      }
     }
   }
 
@@ -250,11 +260,17 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     for (const [platform, upload] of uploadMap.entries()) {
       const target = existingFiles.get(platform);
-      const baseTitle = trimOrEmpty(upload.title) || target?.title || DEFAULT_TITLE;
-      const baseBundle = trimOrEmpty(upload.bundleId) || target?.bundleId || '';
-      const baseVersion = trimOrEmpty(upload.version) || target?.version || '';
-      const contentType = trimOrEmpty(upload.contentType) || target?.contentType || 'application/octet-stream';
-      const sha256 = trimOrEmpty(upload.sha256) || target?.sha256 || '';
+      const baseTitle =
+        trimOrEmpty(upload.title) ||
+        sanitizeTitleFromKey(upload.key) ||
+        DEFAULT_TITLE;
+      const baseBundle = trimOrEmpty(upload.bundleId);
+      const baseVersion = trimOrEmpty(upload.version);
+      if (platform === 'ipa' && (!baseBundle || !baseVersion)) {
+        throw new Error('IPA_METADATA_MISSING');
+      }
+      const contentType = trimOrEmpty(upload.contentType) || 'application/octet-stream';
+      const sha256 = trimOrEmpty(upload.sha256) || '';
       const r2Key = upload.key.replace(/^\/+/, '');
 
       const entries: Array<[string, unknown]> = [
