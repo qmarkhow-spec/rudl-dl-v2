@@ -137,7 +137,6 @@ export default function PaymentClient({ enableEcpay }: Props) {
                 </div>
                 <div className="mt-1 text-sm text-gray-600">
                   ${selectedPackage.priceUsd.toFixed(2)} USD{' '}
-                  <span className="text-gray-400">(NT${selectedPackage.priceTwd.toLocaleString()})</span>
                 </div>
               </>
             ) : (

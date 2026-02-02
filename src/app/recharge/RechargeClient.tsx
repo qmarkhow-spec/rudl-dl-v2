@@ -50,7 +50,6 @@ export default function RechargeClient({ enableEcpay }: Props) {
               <div className="mt-4 text-sm font-medium text-gray-500">{t('recharge.priceLabel')}</div>
               <div className="mt-1 text-lg font-semibold">
                 ${priceUsd.toFixed(2)} USD
-                <span className="ml-2 text-sm text-gray-500">(NT${priceTwd.toLocaleString()})</span>
               </div>
               <button
                 type="button"
