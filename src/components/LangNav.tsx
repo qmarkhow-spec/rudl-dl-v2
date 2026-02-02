@@ -124,9 +124,9 @@ export default function LangNav() {
         </div>
       </Link>
       <nav className="flex items-center gap-4 text-sm">
-        <Link className="underline" href={resolveHref('/')}>
+        <a className="underline" href="https://mycowbay.com/">
           {t('nav.home')}
-        </Link>
+        </a>
         <Link className="underline" href={resolveHref('/dashboard')}>
           {t('nav.dashboard')}
         </Link>
