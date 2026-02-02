@@ -15,6 +15,9 @@
     "nav_how_to_use": "How to Use",
     "nav_plan": "Plan",
     "nav_contact": "Contact Us",
+    "nav_policy": "Policy",
+    "nav_privacy_policy": "Privacy Policy",
+    "nav_terms_of_service": "Terms of Service",
 
     // Hero Section (Home)
     "hero_title": "Enterprise App Distribution & Operations Platform",
@@ -87,7 +90,8 @@
     "contact_li4": "Media and public relations",
     "contact_email": "<strong>Email:</strong> <a href=\"mailto:service@mycowbay.com\">service@mycowbay.com</a>",
     "contact_p2": "We will get back to you within 1-2 business days after receiving your message.",
-    
+
+    // Privacy Policy
     "privacy.title": "Privacy Policy",
     "privacy.intro1": "Welcome to MyCowBay (the \"Website,\" \"we,\" or \"our platform\").",
     "privacy.intro2": "We value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, store, and protect your information.",
@@ -124,6 +128,7 @@
     "privacy.s8.p1": "Email: service@mycowbay.com",
     "privacy.s8.p2": "Website: https://mycowbay.com",
 
+    // Terms of Service
     "tos.title": "Terms of Service",
     "tos.intro1": "Welcome to MyCowBay.",
     "tos.intro2": "By using this Website, you agree to the following Terms of Service.",
@@ -146,87 +151,101 @@
     "tos.s8.p2": "Website: https://mycowbay.com",
 
     // Footer
-    "footer_text": "穢 2026 MyCowBay. All rights reserved."
+    "footer_text": "© 2026 MyCowBay. All rights reserved."
   },
   "zh-Hant": {
-    "meta_title_home": "MyCowBay - 隡平蝝??典??澆像??,
-    "meta_description_home": "MyCowBay ??摰????隡平?(IPA/APK)?折????恣?圾瘙箸獢?蝡?蝞∠??函?????頛?????∟?????,
-    "meta_title_how_to_use": "憒?雿輻 - MyCowBay",
-    "meta_description_how_to_use": "摮貊?憒?雿輻 MyCowBay 撟喳靘??喋恣????函?隡平???,
-    "meta_title_plan": "?寞?????- MyCowBay",
-    "meta_description_plan": "鈭圾 MyCowBay ????蝔格獢??豢???拙??典???璅∟??瘙?隡平???寞???,
-    "meta_title_contact": "?舐窗??- MyCowBay",
-    "meta_description_contact": "?遙雿???MyCowBay ????憿?嚗迭餈?甇日??Ｚ??????舐鼠??,
+    // Meta
+    "meta_title_home": "MyCowBay - 企業級應用分發平台",
+    "meta_description_home": "MyCowBay 提供安全高效的企業應用（IPA/APK）分發與營運管理方案，集中管理版本、下載連結、成員與團隊。",
+    "meta_title_how_to_use": "使用說明 - MyCowBay",
+    "meta_description_how_to_use": "了解如何使用 MyCowBay 平台上傳、管理與分發企業應用。",
+    "meta_title_plan": "方案與費率 - MyCowBay",
+    "meta_description_plan": "查看 MyCowBay 的方案與價格，選擇最適合團隊需求的分發方案。",
+    "meta_title_contact": "聯絡我們 - MyCowBay",
+    "meta_description_contact": "如有任何問題或合作需求，歡迎與 MyCowBay 團隊聯絡。",
 
-    "nav_home": "擐?",
-    "nav_how_to_use": "憒?雿輻",
-    "nav_plan": "?寞?",
-    "nav_contact": "?舐窗??,
+    // Navigation
+    "nav_home": "首頁",
+    "nav_how_to_use": "使用說明",
+    "nav_plan": "方案",
+    "nav_contact": "聯絡我們",
+    "nav_policy": "政策",
+    "nav_privacy_policy": "隱私權政策",
+    "nav_terms_of_service": "服務條款",
 
-    "hero_title": "隡平蝝??典??潸???撟喳",
-    "hero_tagline": "撠?折皜祈岫????雿???憭乩撈?閮剛?嚗?靘??具????潛恣??閫?捱?寞???,
-    "hero_cta": "??銝餅??,
+    // Hero Section (Home)
+    "hero_title": "企業級應用分發與營運平台",
+    "hero_tagline": "專為內部測試、團隊協作與合作夥伴分發設計，安全、高效、好管理。",
+    "hero_cta": "前往控制台",
 
-    "features_title": "?詨??",
-    "features_subtitle": "?????????極?瑟?銝?陛瞏?撟喳銝准?,
-    "feature_1_title": "摰???典摮?,
-    "feature_1_desc": "頛?銝?函? IPA / APK 瑼??????券?蝡?撌乩??嚗????渡??甇瑕?葉蝜潸???霈??祆?嗡??毽鈭?,
-    "feature_2_title": "?暑??頛恣??,
-    "feature_2_desc": "?箸???函???澆?鈭怎??剔雯?嚗蒂?航閮?隤?銝??嚗移皞?嗆????祉?????蝣箔??冽蝮賣?賭?頛甇?Ⅱ???研?,
-    "feature_3_title": "?單?????,
-    "feature_3_desc": "?銵冽??瘥銝?甈⊥???豢?????豢?嚗蒂?航身摰撣豢???霈?冽??????潛?瘜??????,
-    "feature_4_title": "?∠葦????雿?,
-    "feature_4_desc": "?隢?????～??潸???憭乩撈?嚗鈭怨?皞蒂?葉蝞∠????牧????皞???,
+    // Features Section (Home)
+    "features_title": "核心功能",
+    "features_subtitle": "整合應用分發所需的一切工具於同一平台。",
+    "feature_1_title": "安全的應用存放",
+    "feature_1_desc": "輕鬆上傳 IPA / APK，完整保留版本歷程與中繼資料，避免版本管理混亂。",
+    "feature_2_title": "彈性的下載管理",
+    "feature_2_desc": "生成可分享短網址、支援多語系下載頁並可精準控制版本啟用狀態。",
+    "feature_3_title": "即時使用監控",
+    "feature_3_desc": "儀表板提供下載與點數等關鍵資料，並可設定異常提醒。",
+    "feature_4_title": "順暢的團隊協作",
+    "feature_4_desc": "邀請成員、開發者或合作夥伴共享資源，集中通知與說明。",
 
-    "plan_section_title": "?寞?????,
-    "plan_section_desc": "??靘??抒??嗉祥?孵?隞交遛頞喃???璅∠??瘙??獢????敹??踝??典隞交????憒?頛活?詻摮征???豢???拙??獢?,
-    "plan_section_link": "閰喟敦???寡??寞?瘥?嚗???a href=\"/plan.html\">?寞??</a>??a href=\"/contact-us.html\">?舐窗??/a>??摰Ｚˊ??嫘?,
-    
-    "how_to_use_section_title": "敹恍???,
-    "how_to_use_section_desc": "銝郊撽?蝡???函???嚗?,
-    "step_1": "<strong>撱箇?撠?</strong>嚗酉??嚗遣蝡?洵銝???典?獢?,
-    "step_2": "<strong>銝?</strong>嚗??函? IPA ??APK 瑼???喃蜓?批??,
-    "step_3": "<strong>?澈???</strong>嚗??頛??銝血?鈭怎策?函?皜祈岫鈭箏????,
-    "how_to_use_section_link": "?閬憭?撘?隢??望???<a href=\"/how-to-use.html\">憒?雿輻</a>????,
+    // Plan Section (Home)
+    "plan_section_title": "方案與費率",
+    "plan_section_desc": "提供彈性付費方式，所有方案皆包含完整功能，可依下載量與儲存需求選擇。",
+    "plan_section_link": "詳細價格與方案請參考 <a href=\"/plan.html\">方案頁</a>，或 <a href=\"/contact-us.html\">聯絡我們</a> 取得客製報價。",
 
-    "contact_section_title": "?閬憭??抬?",
-    "contact_section_desc": "?∟??冽?閬??交?氬恥鋆賢??嚗??臬??????遙雿????賣迭餈???蝜怒?,
-    "contact_section_cta": "?舐窗??,
+    // How-to-use Section (Home)
+    "how_to_use_section_title": "快速開始",
+    "how_to_use_section_desc": "三步驟開始你的應用分發：",
+    "step_1": "<strong>建立專案</strong>：註冊後建立第一個應用專案。",
+    "step_2": "<strong>上傳應用</strong>：拖曳或選擇 IPA / APK 上傳至控制台。",
+    "step_3": "<strong>分享連結</strong>：產生下載連結並分享給測試者或團隊。",
+    "how_to_use_section_link": "需要更多指引？請查看 <a href=\"/how-to-use.html\">使用說明</a>。",
 
-    "how_to_use_title": "憒?雿輻",
-    "how_to_use_subtitle": "閰喟敦???喳??典??,
-    "how_to_use_p1": "?迤?冽??隞賢??渡?雿輻????雿喳祕頦?撟怠?典????MyCowBay ?????賬摰孵?瘨菔?嚗?,
-    "how_to_use_li1": "撠????函?撱箇?瘚?",
-    "how_to_use_li2": "?蝞∠???皞?,
-    "how_to_use_li3": "銝???恥鋆賢?閮剖?",
-    "how_to_use_li4": "??????恣??,
-    "how_to_use_li5": "API 銝脫???",
-    "how_to_use_p2": "???函???蝑?",
-    
-    "plan_title": "?寞?????,
-    "plan_subtitle": "??典??抒???典隞?Pay-as-you-go) 璅∪?嚗?芷??箸?祕?蝙?券?鞈潸眺暺嚗??鞎餅?蝬???,
-    "plan_table_title": "暺鞈潸眺?寞?",
-    "plan_points": "暺",
-    "plan_price": "鞎餌 (USD)",
-    "plan_usage_title": "銝?暺瘨?,
-    "plan_usage_desc": "?∟??蝔?瑼?憭批?嚗??豢?????銝?",
-    "plan_usage_android": "<strong>Android (APK)</strong>: 瘥活銝???<strong>3</strong> 暺?,
-    "plan_usage_ios": "<strong>Apple (IPA)</strong>: 瘥活銝???<strong>5</strong> 暺?,
-    "plan_note": "??頃鞎瑞?暺?雿輻????臭誑?冽??冽?蜓?批銝剖?潭??亦?擗???,
-    "plan_actions_title": "皞?憟賡?憪???",
-    "plan_cta_register": "蝡閮餃?",
-    "plan_cta_contact": "隢株岷憭折??∟頃",
+    // Contact Section (Home)
+    "contact_section_title": "需要更多協助？",
+    "contact_section_desc": "不論是導入協助、功能客製或任何問題，歡迎隨時與我們聯絡。",
+    "contact_section_cta": "聯絡我們",
 
-    "contact_title": "?舐窗??,
-    "contact_subtitle": "??璅??賢??函?????,
-    "contact_p1": "?交?誑銝?瘙?隢???蝜恬?",
-    "contact_li1": "??????株垣閰?,
-    "contact_li2": "摰Ｚˊ???賡???,
-    "contact_li3": "?銵?渲????",
-    "contact_li4": "慦????,
-    "contact_email": "<strong>?餃??萎辣:</strong> <a href=\"mailto:service@mycowbay.com\">service@mycowbay.com</a>",
-    "contact_p2": "???冽?啗??臬? 1-2 ?極雿予?批?閬??,
+    // How to Use Page
+    "how_to_use_title": "使用說明",
+    "how_to_use_subtitle": "詳細教學內容即將推出。",
+    "how_to_use_p1": "我們正在整理完整的使用手冊與最佳實務，內容將涵蓋：",
+    "how_to_use_li1": "專案與應用建立流程",
+    "how_to_use_li2": "版本管理與回滾",
+    "how_to_use_li3": "下載頁客製化設定",
+    "how_to_use_li4": "成員權限管理",
+    "how_to_use_li5": "API 串接與自動化",
+    "how_to_use_p2": "感謝您的耐心等待！",
 
+    // Plan Page
+    "plan_title": "方案與費率",
+    "plan_subtitle": "提供彈性付費方式，所有方案皆包含完整功能，可依使用量選擇。",
+    "plan_table_title": "點數購買方案",
+    "plan_points": "點數",
+    "plan_price": "價格（USD）",
+    "plan_usage_title": "下載點數消耗",
+    "plan_usage_desc": "無論檔案大小，點數消耗如下：",
+    "plan_usage_android": "<strong>Android (APK)</strong>：每次下載 <strong>3</strong> 點",
+    "plan_usage_ios": "<strong>Apple (IPA)</strong>：每次下載 <strong>5</strong> 點",
+    "plan_note": "點數無使用期限，可隨時在控制台查看或加值。",
+    "plan_actions_title": "準備開始了嗎？",
+    "plan_cta_register": "立即註冊",
+    "plan_cta_contact": "大量購買洽詢",
+
+    // Contact Page
+    "contact_title": "聯絡我們",
+    "contact_subtitle": "歡迎與我們聯繫。",
+    "contact_p1": "如有以下需求，歡迎與我們聯絡：",
+    "contact_li1": "商務合作與銷售諮詢",
+    "contact_li2": "功能客製開發",
+    "contact_li3": "技術支援與問題回報",
+    "contact_li4": "媒體與公關合作",
+    "contact_email": "<strong>電子郵件：</strong> <a href=\"mailto:service@mycowbay.com\">service@mycowbay.com</a>",
+    "contact_p2": "我們將在 1-2 個工作日內回覆您的訊息。",
+
+    // Privacy Policy
     "privacy.title": "隱私權政策（Privacy Policy）",
     "privacy.intro1": "歡迎您使用 MyCowBay（以下簡稱「本網站」、「我們」或「本平台」。",
     "privacy.intro2": "我們非常重視您的隱私權，並致力於保護您的個人資料安全。本隱私權政策說明我們如何蒐集、使用、儲存與保護您的資訊。",
@@ -263,6 +282,7 @@
     "privacy.s8.p1": "Email：service@mycowbay.com",
     "privacy.s8.p2": "網站：https://mycowbay.com",
 
+    // Terms of Service
     "tos.title": "服務條款（Terms of Service）",
     "tos.intro1": "歡迎使用 MyCowBay。",
     "tos.intro2": "使用本網站即表示您同意遵守以下服務條款。",
@@ -284,7 +304,8 @@
     "tos.s8.p1": "Email：service@mycowbay.com",
     "tos.s8.p2": "網站：https://mycowbay.com",
 
-    "footer_text": "穢 2026 MyCowBay. All rights reserved."
+    // Footer
+    "footer_text": "© 2026 MyCowbay. All rights reserved."
   }
 };
 
