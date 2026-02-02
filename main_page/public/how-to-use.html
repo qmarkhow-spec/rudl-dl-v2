@@ -1,12 +1,28 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n-key="meta_title_how_to_use">如何使用 - MyCowBay</title>
-    <meta name="description" content="學習如何使用 MyCowBay 平台來上傳、管理和分發您的企業應用。" data-i18n-key="meta_description_how_to_use" />
+    <title data-i18n-key="meta_title_how_to_use">How to Use - MyCowBay</title>
+    <meta name="description" data-i18n-key="meta_description_how_to_use" content="Learn how to use the MyCowBay platform to upload, manage, and distribute your enterprise applications." />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .guide-grid { display: grid; gap: 16px; }
+      .guide-grid.two { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+      .guide-grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .guide-step { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; background: #fff; }
+      .guide-step h3 { margin: 0 0 8px; font-size: 16px; }
+      .guide-step p { margin: 0; color: #4b5563; }
+      .guide-figure { margin: 10px 0 0; }
+      .guide-figure img { width: 100%; border-radius: 10px; border: 1px solid #e5e7eb; }
+      .guide-figure figcaption { font-size: 12px; color: #6b7280; margin-top: 6px; }
+      .callout { border: 1px dashed #cbd5f5; background: #eef2ff; color: #1e3a8a; padding: 12px 14px; border-radius: 10px; }
+      .section + .section { margin-top: 24px; }
+      .section h2 { text-align: left; margin-bottom: 8px; }
+      .section ul { margin: 6px 0 0 18px; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #e5e7eb; color: #374151; margin-left: 6px; }
+    </style>
   </head>
   <body>
     <header class="top-nav">
@@ -16,17 +32,17 @@
           <span class="brand-name">MyCowBay</span>
         </a>
         <nav>
-          <a href="/" data-i18n-key="nav_home">首頁</a>
-          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">如何使用</a>
-          <a href="/plan.html" data-i18n-key="nav_plan">方案</a>
+          <a href="/" data-i18n-key="nav_home">Home</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">How to Use</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">Plan</a>
           <div class="dropdown">
-            <a href="javascript:void(0)" class="dropbtn" data-i18n-key="nav_policy">政策</a>
+            <a href="javascript:void(0)" class="dropbtn" data-i18n-key="nav_policy">Policy</a>
             <div class="dropdown-content">
-              <a href="/privacy-policy.html" data-i18n-key="nav_privacy_policy">隱私權政策</a>
-              <a href="/terms-of-service.html" data-i18n-key="nav_terms_of_service">服務條款</a>
+              <a href="/privacy-policy.html" data-i18n-key="nav_privacy_policy">Privacy Policy</a>
+              <a href="/terms-of-service.html" data-i18n-key="nav_terms_of_service">Terms of Service</a>
             </div>
           </div>
-          <a href="/contact-us.html" data-i18n-key="nav_contact">聯絡我們</a>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">Contact</a>
         </nav>
         <div class="lang-switcher">
           <select id="lang-selector">
@@ -39,17 +55,129 @@
 
     <main class="page">
       <section class="card">
-        <h1 data-i18n-key="how_to_use_title">如何使用</h1>
-        <p class="subtitle" data-i18n-key="how_to_use_subtitle">詳細指南即將推出。</p>
-        <p data-i18n-key="how_to_use_p1">我們正在整理一份完整的使用手冊與最佳實踐，幫助您充分利用 MyCowBay 的所有功能。內容將涵蓋：</p>
-        <ul>
-            <li data-i18n-key="how_to_use_li1">專案與應用的建立流程</li>
-            <li data-i18n-key="how_to_use_li2">版本管理與回溯</li>
-            <li data-i18n-key="how_to_use_li3">下載頁面的客製化設定</li>
-            <li data-i18n-key="how_to_use_li4">團隊成員的權限管理</li>
-            <li data-i18n-key="how_to_use_li5">API 串接與自動化</li>
-        </ul>
-        <p data-i18n-key="how_to_use_p2">感謝您的耐心等候！</p>
+        <h1 data-i18n-key="guide.title">使用說明</h1>
+        <p class="subtitle" data-i18n-key="guide.subtitle">依照平台完整功能，快速上手分發、管理與監控。</p>
+
+        <div class="callout" data-i18n-key="guide.callout">
+          小提醒：下載頁範例可參考 app.mycowbay.com 的示範連結，我們建議配合實際畫面操作。
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.quick.title">快速開始（3 步驟）</h2>
+          <div class="guide-grid three">
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.quick.step1.title">1. 建立分發</h3>
+              <p data-i18n-key="guide.quick.step1.desc">進入控制台，點「新增分發」建立新的下載專案。</p>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.quick.step2.title">2. 上傳 APK / IPA</h3>
+              <p data-i18n-key="guide.quick.step2.desc">上傳安裝檔並開啟「自動填入」，系統會解析套件資訊。</p>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.quick.step3.title">3. 分享下載連結</h3>
+              <p data-i18n-key="guide.quick.step3.desc">複製下載頁連結，提供給測試者或使用者。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.console.title">控制台總覽</h2>
+          <ul>
+            <li data-i18n-key="guide.console.li1">列表頁：查看所有分發、今日下載、狀態與版本資訊。</li>
+            <li data-i18n-key="guide.console.li2">帳號頁：管理多帳號登入與切換。</li>
+            <li data-i18n-key="guide.console.li3">上傳佇列：查看背景上傳進度與歷史紀錄。</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.create.title">新增／編輯分發</h2>
+          <div class="guide-grid two">
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.create.step1.title">填寫基本資料</h3>
+              <p data-i18n-key="guide.create.step1.desc">輸入名稱、Bundle ID、版本、語言、網路區域與啟用狀態。</p>
+              <figure class="guide-figure">
+                <img src="/images/how-to-use/form-basic.png" alt="basic form" />
+                <figcaption data-i18n-key="guide.create.step1.caption">表單基本欄位示意。</figcaption>
+              </figure>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.create.step2.title">自動填入（Autofill）</h3>
+              <p data-i18n-key="guide.create.step2.desc">開啟後系統會從 APK/IPA 解析名稱、Bundle ID 與版本並填入欄位。</p>
+              <figure class="guide-figure">
+                <img src="/images/how-to-use/autofill.png" alt="autofill" />
+                <figcaption data-i18n-key="guide.create.step2.caption">建議保持開啟以避免手動錯誤。</figcaption>
+              </figure>
+            </div>
+          </div>
+          <div class="guide-grid two" style="margin-top: 12px;">
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.create.step3.title">上傳檔案</h3>
+              <p data-i18n-key="guide.create.step3.desc">APK 與 IPA 可分別上傳，支援背景上傳與進度通知。</p>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.create.step4.title">保存或更新</h3>
+              <p data-i18n-key="guide.create.step4.desc">按下 Create/Save 後，資料會寫入 links，檔案 metadata 會寫入 files。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.manage.title">分發管理與操作</h2>
+          <ul>
+            <li data-i18n-key="guide.manage.li1">詳情：查看近 10 天下載統計與趨勢。</li>
+            <li data-i18n-key="guide.manage.li2">編輯：更新檔案或內容，維持下載頁資訊同步。</li>
+            <li data-i18n-key="guide.manage.li3">刪除：移除分發與相關檔案。</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.download.title">下載頁與安裝流程</h2>
+          <div class="guide-grid two">
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.download.step1.title">下載頁資訊</h3>
+              <p data-i18n-key="guide.download.step1.desc">下載頁會顯示名稱、版本、檔案大小與下載按鈕。</p>
+              <figure class="guide-figure">
+                <img src="/images/how-to-use/download-page.png" alt="download page" />
+                <figcaption data-i18n-key="guide.download.step1.caption">下載頁示意（可替換為實際截圖）。</figcaption>
+              </figure>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.download.step2.title">iOS 安裝</h3>
+              <p data-i18n-key="guide.download.step2.desc">點「iOS 安裝」後會引導至企業簽署安裝流程。</p>
+              <ul>
+                <li data-i18n-key="guide.download.step2.li1">請使用 Safari 開啟</li>
+                <li data-i18n-key="guide.download.step2.li2">安裝後到「設定 > 一般 > VPN 與裝置管理」信任憑證</li>
+              </ul>
+            </div>
+          </div>
+          <div class="guide-grid two" style="margin-top: 12px;">
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.download.step3.title">Android 安裝</h3>
+              <p data-i18n-key="guide.download.step3.desc">點「Android 下載」後會下載 APK，安裝前請允許未知來源。</p>
+            </div>
+            <div class="guide-step">
+              <h3 data-i18n-key="guide.download.step4.title">扣點與下載統計</h3>
+              <p data-i18n-key="guide.download.step4.desc">每次下載會記錄統計並依平台扣點（APK 3 點 / IPA 5 點）。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.members.title">會員與監控</h2>
+          <ul>
+            <li data-i18n-key="guide.members.li1">會員列表：查看角色與餘額。</li>
+            <li data-i18n-key="guide.members.li2">監控設定：可設定下載異常通知。</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n-key="guide.faq.title">常見問題</h2>
+          <ul>
+            <li data-i18n-key="guide.faq.li1">Autofill 若解析失敗，請確認檔案是否正確。</li>
+            <li data-i18n-key="guide.faq.li2">iOS 無法安裝多半是憑證未信任。</li>
+            <li data-i18n-key="guide.faq.li3">下載頁顯示資料取自 links，安裝 metadata 取自 files。</li>
+          </ul>
+        </div>
       </section>
     </main>
 
