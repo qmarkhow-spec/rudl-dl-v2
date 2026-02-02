@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MyCowBay - 企業級應用分發平台</title>
-    <meta name="description" content="MyCowBay 提供安全、高效的企業應用(IPA/APK)內部分發與營運管理解決方案。一站式管理您的應用版本、下載連結、會員與團隊。" />
+    <title data-i18n-key="meta_title_home">MyCowBay - 企業級應用分發平台</title>
+    <meta name="description" content="MyCowBay 提供安全、高效的企業應用(IPA/APK)內部分發與營運管理解決方案。一站式管理您的應用版本、下載連結、會員與團隊。" data-i18n-key="meta_description_home"/>
     <meta name="google-adsense-account" content="ca-pub-7917094283509830" />
     <script
       async
@@ -22,73 +22,80 @@
           <span class="brand-name">MyCowBay</span>
         </a>
         <nav>
-          <a href="/">首頁</a>
-          <a href="/how-to-use.html">如何使用</a>
-          <a href="/plan.html">方案</a>
-          <a href="/contact-us.html">聯絡我們</a>
+          <a href="/" data-i18n-key="nav_home">首頁</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">如何使用</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">方案</a>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">聯絡我們</a>
         </nav>
+        <div class="lang-switcher">
+          <select id="lang-selector">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
       </div>
     </header>
 
     <main class="page">
       <section class="hero">
-        <h1>企業級應用分發與營運平台</h1>
-        <p class="tagline">專為內部測試、團隊協作及合作夥伴分發設計，提供安全、高效、易於管理的解決方案。</p>
-        <a href="https://app.mycowbay.com/" class="cta-button">前往主控台</a>
+        <h1 data-i18n-key="hero_title">企業級應用分發與營運平台</h1>
+        <p class="tagline" data-i18n-key="hero_tagline">專為內部測試、團隊協作及合作夥伴分發設計，提供安全、高效、易於管理的解決方案。</p>
+        <a href="https://app.mycowbay.com/" class="cta-button" data-i18n-key="hero_cta">前往主控台</a>
       </section>
 
       <section id="features" class="card">
-        <h2>核心功能</h2>
-        <p class="subtitle">我們將應用分發所需的一切工具整合在一個簡潔的平台中。</p>
+        <h2 data-i18n-key="features_title">核心功能</h2>
+        <p class="subtitle" data-i18n-key="features_subtitle">我們將應用分發所需的一切工具整合在一個簡潔的平台中。</p>
         <div class="grid">
           <article class="feature">
-            <h3><img src="https://img.icons8.com/ios-filled/50/000000/server.png" alt="安全儲存" width="24" height="24"> 安全的應用儲存</h3>
-            <p>輕鬆上傳您的 IPA / APK 檔案。每個應用都有獨立的工作區，保留完整的版本歷史與中繼資料，讓版本控制不再混亂。</p>
+            <h3 data-i18n-key="feature_1_title"><img src="https://img.icons8.com/ios-filled/50/000000/server.png" alt="安全儲存" width="24" height="24"> 安全的應用儲存</h3>
+            <p data-i18n-key="feature_1_desc">輕鬆上傳您的 IPA / APK 檔案。每個應用都有獨立的工作區，保留完整的版本歷史與中繼資料，讓版本控制不再混亂。</p>
           </article>
           <article class="feature">
-            <h3><img src="https://img.icons8.com/ios-filled/50/000000/link.png" alt="連結管理" width="24" height="24"> 靈活的下載管理</h3>
-            <p>為您的應用產生易於分享的短網址，並可自訂多語言下載頁面，精準控制每個版本的啟用狀態，確保用戶總是能下載到正確的版本。</p>
+            <h3 data-i18n-key="feature_2_title"><img src="https://img.icons8.com/ios-filled/50/000000/link.png" alt="連結管理" width="24" height="24"> 靈活的下載管理</h3>
+            <p data-i18n-key="feature_2_desc">為您的應用產生易於分享的短網址，並可自訂多語言下載頁面，精準控制每個版本的啟用狀態，確保用戶總是能下載到正確的版本。</p>
           </article>
           <article class="feature">
-            <h3><img src="https://img.icons8.com/ios-filled/50/000000/combo-chart.png" alt="用量監控" width="24" height="24"> 即時的用量監控</h3>
-            <p>儀表板提供每日下載次數、點數消耗等關鍵數據，並可設定異常提醒，讓您隨時掌握應用的分發狀況與成本效益。</p>
+            <h3 data-i18n-key="feature_3_title"><img src="https://img.icons8.com/ios-filled/50/000000/combo-chart.png" alt="用量監控" width="24" height="24"> 即時的用量監控</h3>
+            <p data-i18n-key="feature_3_desc">儀表板提供每日下載次數、點數消耗等關鍵數據，並可設定異常提醒，讓您隨時掌握應用的分發狀況與成本效益。</p>
           </article>
           <article class="feature">
-            <h3><img src="https://img.icons8.com/ios-filled/50/000000/conference-call.png" alt="團隊協作" width="24" height="24"> 無縫的團隊協作</h3>
-            <p>邀請您的團隊成員、開發者或合作夥伴加入，共享資源並集中管理所有通知與說明，提升溝通效率。</p>
+            <h3 data-i18n-key="feature_4_title"><img src="https://img.icons8.com/ios-filled/50/000000/conference-call.png" alt="團隊協作" width="24" height="24"> 無縫的團隊協作</h3>
+            <p data-i18n-key="feature_4_desc">邀請您的團隊成員、開發者或合作夥伴加入，共享資源並集中管理所有通知與說明，提升溝通效率。</p>
           </article>
         </div>
       </section>
 
       <section id="plan" class="card">
-        <h2>方案與定價</h2>
-        <p>我們提供彈性的收費方式以滿足不同規模的需求。所有方案皆包含所有核心功能，您可以根據您的用量（如下載次數、儲存空間）選擇最適合的方案。</p>
-        <p>詳細的定價與方案比較，請參考<a href="/plan.html">方案頁面</a>或<a href="/contact-us.html">聯絡我們</a>取得客製化報價。</p>
+        <h2 data-i18n-key="plan_section_title">方案與定價</h2>
+        <p data-i18n-key="plan_section_desc">我們提供彈性的收費方式以滿足不同規模的需求。所有方案皆包含所有核心功能，您可以根據您的用量（如下載次數、儲存空間）選擇最適合的方案。</p>
+        <p data-i18n-key="plan_section_link">詳細的定價與方案比較，請參考<a href="/plan.html">方案頁面</a>或<a href="/contact-us.html">聯絡我們</a>取得客製化報價。</p>
       </section>
       
       <section id="how-to-use" class="card">
-        <h2>快速上手</h2>
-        <p>三步驟，立即開始您的應用分發：</p>
+        <h2 data-i18n-key="how_to_use_section_title">快速上手</h2>
+        <p data-i18n-key="how_to_use_section_desc">三步驟，立即開始您的應用分發：</p>
         <ol class="steps">
-          <li><strong>建立專案</strong>：註冊後，建立您的第一個應用專案。</li>
-          <li><strong>上傳應用</strong>：將您的 IPA 或 APK 檔案拖曳至主控台。</li>
-          <li><strong>分享連結</strong>：產生下載連結並分享給您的測試人員或團隊。</li>
+          <li data-i18n-key="step_1"><strong>建立專案</strong>：註冊後，建立您的第一個應用專案。</li>
+          <li data-i18n-key="step_2"><strong>上傳應用</strong>：將您的 IPA 或 APK 檔案拖曳至主控台。</li>
+          <li data-i18n-key="step_3"><strong>分享連結</strong>：產生下載連結並分享給您的測試人員或團隊。</li>
         </ol>
-        <p>需要更多指引？請參閱我們的<a href="/how-to-use.html">如何使用</a>指南。</p>
+        <p data-i18n-key="how_to_use_section_link">需要更多指引？請參閱我們的<a href="/how-to-use.html">如何使用</a>指南。</p>
       </section>
 
       <section id="contact" class="card">
-        <h2>需要更多協助？</h2>
-        <p>無論您是需要導入支援、客製化功能，或是對我們的服務有任何疑問，都歡迎隨時與我們聯繫。</p>
-        <a href="/contact-us.html" class="cta-button secondary">聯絡我們</a>
+        <h2 data-i18n-key="contact_section_title">需要更多協助？</h2>
+        <p data-i18n-key="contact_section_desc">無論您是需要導入支援、客製化功能，或是對我們的服務有任何疑問，都歡迎隨時與我們聯繫。</p>
+        <a href="/contact-us.html" class="cta-button secondary" data-i18n-key="contact_section_cta">聯絡我們</a>
       </section>
 
     </main>
 
     <footer>
       <div class="container">
-        <p>© 2026 MyCowBay. All rights reserved.</p>
+        <p data-i18n-key="footer_text">© 2026 MyCowBay. All rights reserved.</p>
       </div>
     </footer>
+    <script src="/i18n.js"></script>
   </body>
 </html>

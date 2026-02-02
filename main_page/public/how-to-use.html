@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>如何使用 - MyCowBay</title>
-    <meta name="description" content="學習如何使用 MyCowBay 平台來上傳、管理和分發您的企業應用。" />
+    <title data-i18n-key="meta_title_how_to_use">如何使用 - MyCowBay</title>
+    <meta name="description" content="學習如何使用 MyCowBay 平台來上傳、管理和分發您的企業應用。" data-i18n-key="meta_description_how_to_use" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -16,34 +16,41 @@
           <span class="brand-name">MyCowBay</span>
         </a>
         <nav>
-          <a href="/">首頁</a>
-          <a href="/how-to-use.html">如何使用</a>
-          <a href="/plan.html">方案</a>
-          <a href="/contact-us.html">聯絡我們</a>
+          <a href="/" data-i18n-key="nav_home">首頁</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">如何使用</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">方案</a>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">聯絡我們</a>
         </nav>
+        <div class="lang-switcher">
+          <select id="lang-selector">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
       </div>
     </header>
 
     <main class="page">
       <section class="card">
-        <h1>如何使用</h1>
-        <p class="subtitle">詳細指南即將推出。</p>
-        <p>我們正在整理一份完整的使用手冊與最佳實踐，幫助您充分利用 MyCowBay 的所有功能。內容將涵蓋：</p>
+        <h1 data-i18n-key="how_to_use_title">如何使用</h1>
+        <p class="subtitle" data-i18n-key="how_to_use_subtitle">詳細指南即將推出。</p>
+        <p data-i18n-key="how_to_use_p1">我們正在整理一份完整的使用手冊與最佳實踐，幫助您充分利用 MyCowBay 的所有功能。內容將涵蓋：</p>
         <ul>
-            <li>專案與應用的建立流程</li>
-            <li>版本管理與回溯</li>
-            <li>下載頁面的客製化設定</li>
-            <li>團隊成員的權限管理</li>
-            <li>API 串接與自動化</li>
+            <li data-i18n-key="how_to_use_li1">專案與應用的建立流程</li>
+            <li data-i18n-key="how_to_use_li2">版本管理與回溯</li>
+            <li data-i18n-key="how_to_use_li3">下載頁面的客製化設定</li>
+            <li data-i18n-key="how_to_use_li4">團隊成員的權限管理</li>
+            <li data-i18n-key="how_to_use_li5">API 串接與自動化</li>
         </ul>
-        <p>感謝您的耐心等候！</p>
+        <p data-i18n-key="how_to_use_p2">感謝您的耐心等候！</p>
       </section>
     </main>
 
     <footer>
       <div class="container">
-        <p>© 2026 MyCowBay. All rights reserved.</p>
+        <p data-i18n-key="footer_text">© 2026 MyCowBay. All rights reserved.</p>
       </div>
     </footer>
+    <script src="/i18n.js"></script>
   </body>
 </html>

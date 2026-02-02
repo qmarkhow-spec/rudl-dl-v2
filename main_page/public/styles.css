@@ -317,3 +317,27 @@ tbody tr:hover {
 .actions .cta-button {
   margin: 0 8px;
 }
+/* Language Switcher */
+.lang-switcher {
+  position: relative;
+  margin-left: 24px;
+}
+#lang-selector {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 30px 6px 12px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22%2364748B%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%208l5%205%205-5H5z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 8px top 50%;
+  background-size: 16px;
+}
+#lang-selector:hover {
+  border-color: #cbd5e1;
+}

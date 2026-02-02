@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>方案與定價 - MyCowBay</title>
-    <meta name="description" content="了解 MyCowBay 提供的多種方案，選擇最適合您團隊規模與需求的企業應用分發方案。" />
+    <title data-i18n-key="meta_title_plan">方案與定價 - MyCowBay</title>
+    <meta name="description" content="了解 MyCowBay 提供的多種方案，選擇最適合您團隊規模與需求的企業應用分發方案。" data-i18n-key="meta_description_plan" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -16,27 +16,33 @@
           <span class="brand-name">MyCowBay</span>
         </a>
         <nav>
-          <a href="/">首頁</a>
-          <a href="/how-to-use.html">如何使用</a>
-          <a href="/plan.html">方案</a>
-          <a href="/contact-us.html">聯絡我們</a>
+          <a href="/" data-i18n-key="nav_home">首頁</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">如何使用</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">方案</a>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">聯絡我們</a>
         </nav>
+        <div class="lang-switcher">
+          <select id="lang-selector">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
       </div>
     </header>
 
     <main class="page">
       <section class="card">
-        <h1>方案與定價</h1>
-        <p class="subtitle">我們採用彈性的「即用即付」(Pay-as-you-go) 模式，您只需為您的實際使用量購買點數，無須月費或綁約。</p>
+        <h1 data-i18n-key="plan_title">方案與定價</h1>
+        <p class="subtitle" data-i18n-key="plan_subtitle">我們採用彈性的「即用即付」(Pay-as-you-go) 模式，您只需為您的實際使用量購買點數，無須月費或綁約。</p>
         
         <div class="pricing-container">
           <div class="pricing-table">
-            <h3>點數購買方案</h3>
+            <h3 data-i18n-key="plan_table_title">點數購買方案</h3>
             <table>
               <thead>
                 <tr>
-                  <th>點數</th>
-                  <th>費用 (USD)</th>
+                  <th data-i18n-key="plan_points">點數</th>
+                  <th data-i18n-key="plan_price">費用 (USD)</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,28 +75,29 @@
           </div>
 
           <div class="usage-rules">
-            <h3>下載點數消耗</h3>
-            <p>無論應用程式檔案大小，點數消耗規則如下：</p>
+            <h3 data-i18n-key="plan_usage_title">下載點數消耗</h3>
+            <p data-i18n-key="plan_usage_desc">無論應用程式檔案大小，點數消耗規則如下：</p>
             <ul>
-              <li><strong>Android (APK)</strong>: 每次下載扣 <strong>3</strong> 點</li>
-              <li><strong>Apple (IPA)</strong>: 每次下載扣 <strong>5</strong> 點</li>
+              <li data-i18n-key="plan_usage_android"><strong>Android (APK)</strong>: 每次下載扣 <strong>3</strong> 點</li>
+              <li data-i18n-key="plan_usage_ios"><strong>Apple (IPA)</strong>: 每次下載扣 <strong>5</strong> 點</li>
             </ul>
-            <p class="note">所有購買的點數皆無使用期限。您可以隨時在您的主控台中儲值或查看餘額。</p>
+            <p class="note" data-i18n-key="plan_note">所有購買的點數皆無使用期限。您可以隨時在您的主控台中儲值或查看餘額。</p>
           </div>
         </div>
         
         <div class="actions">
-          <p>準備好開始了嗎？</p>
-          <a href="https://app.mycowbay.com/register" class="cta-button">立即註冊</a>
-          <a href="/contact-us.html" class="cta-button secondary">諮詢大量採購</a>
+          <p data-i18n-key="plan_actions_title">準備好開始了嗎？</p>
+          <a href="https://app.mycowbay.com/register" class="cta-button" data-i18n-key="plan_cta_register">立即註冊</a>
+          <a href="/contact-us.html" class="cta-button secondary" data-i18n-key="plan_cta_contact">諮詢大量採購</a>
         </div>
       </section>
     </main>
 
     <footer>
       <div class="container">
-        <p>© 2026 MyCowBay. All rights reserved.</p>
+        <p data-i18n-key="footer_text">© 2026 MyCowBay. All rights reserved.</p>
       </div>
     </footer>
+    <script src="/i18n.js"></script>
   </body>
 </html>

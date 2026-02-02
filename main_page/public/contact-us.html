@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>聯絡我們 - MyCowBay</title>
-    <meta name="description" content="有任何關於 MyCowBay 服務的問題嗎？歡迎透過此頁面與我們的團隊聯繫。" />
+    <title data-i18n-key="meta_title_contact">聯絡我們 - MyCowBay</title>
+    <meta name="description" content="有任何關於 MyCowBay 服務的問題嗎？歡迎透過此頁面與我們的團隊聯繫。" data-i18n-key="meta_description_contact" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -16,34 +16,41 @@
           <span class="brand-name">MyCowBay</span>
         </a>
         <nav>
-          <a href="/">首頁</a>
-          <a href="/how-to-use.html">如何使用</a>
-          <a href="/plan.html">方案</a>
-          <a href="/contact-us.html">聯絡我們</a>
+          <a href="/" data-i18n-key="nav_home">首頁</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">如何使用</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">方案</a>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">聯絡我們</a>
         </nav>
+        <div class="lang-switcher">
+          <select id="lang-selector">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
       </div>
     </header>
 
     <main class="page">
       <section class="card">
-        <h1>聯絡我們</h1>
-        <p class="subtitle">我們很樂意聽取您的意見。</p>
-        <p>若您有以下需求，請隨時與我們聯繫：</p>
+        <h1 data-i18n-key="contact_title">聯絡我們</h1>
+        <p class="subtitle" data-i18n-key="contact_subtitle">我們很樂意聽取您的意見。</p>
+        <p data-i18n-key="contact_p1">若您有以下需求，請隨時與我們聯繫：</p>
         <ul>
-            <li>商務合作與銷售諮詢</li>
-            <li>客製化功能開發</li>
-            <li>技術支援與問題回報</li>
-            <li>媒體與公關</li>
+            <li data-i18n-key="contact_li1">商務合作與銷售諮詢</li>
+            <li data-i18n-key="contact_li2">客製化功能開發</li>
+            <li data-i18n-key="contact_li3">技術支援與問題回報</li>
+            <li data-i18n-key="contact_li4">媒體與公關</li>
         </ul>
-        <p><strong>電子郵件:</strong> <a href="mailto:service@mycowbay.com">service@mycowbay.com</a></p>
-        <p>我們將在收到訊息後 1-2 個工作天內回覆您。</p>
+        <p data-i18n-key="contact_email"><strong>電子郵件:</strong> <a href="mailto:service@mycowbay.com">service@mycowbay.com</a></p>
+        <p data-i18n-key="contact_p2">我們將在收到訊息後 1-2 個工作天內回覆您。</p>
       </section>
     </main>
 
     <footer>
       <div class="container">
-        <p>© 2026 MyCowBay. All rights reserved.</p>
+        <p data-i18n-key="footer_text">© 2026 MyCowBay. All rights reserved.</p>
       </div>
     </footer>
+    <script src="/i18n.js"></script>
   </body>
 </html>
