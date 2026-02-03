@@ -136,7 +136,7 @@
     "guide.faq.title": "FAQ",
     "guide.faq.li1": "If Autofill fails, verify the file is correct.",
     "guide.faq.li2": "iOS install issues are usually untrusted certificates.",
-    "guide.faq.li3": "Download page displays links; install metadata uses files."
+    "guide.faq.li3": "Download page displays links; install metadata uses files.",
 
     // Privacy Policy
     "privacy.title": "Privacy Policy",
@@ -337,7 +337,7 @@
     "guide.faq.title": "常見問題",
     "guide.faq.li1": "Autofill 若解析失敗，請確認檔案是否正確。",
     "guide.faq.li2": "iOS 無法安裝多半是憑證未信任。",
-    "guide.faq.li3": "下載頁顯示資料取自 links，安裝 metadata 取自 files。"
+    "guide.faq.li3": "下載頁顯示資料取自 links，安裝 metadata 取自 files。",
 
     // Privacy Policy
     "privacy.title": "隱私權政策（Privacy Policy）",
