@@ -153,6 +153,10 @@
     "articles.desc": "MyCowBay articles and resources.",
     "articles.item1.title": "What is Enterprise App Distribution?",
     "articles.item1.desc": "Understand enterprise distribution and common use cases.",
+    "articles.item2.title": "Download & Installation Safety Guide (Android / iOS)",
+    "articles.item2.desc": "Common risks and a safety checklist for safer installs.",
+    "articles.item3.title": "FAQ",
+    "articles.item3.desc": "Download, installation, connectivity, and safety FAQs.",
     "articles.read": "Read article",
 
     "faq.title": "FAQ",
@@ -448,6 +452,10 @@
     "articles.desc": "MyCowBay 文章與資源",
     "articles.item1.title": "什麼是企業級應用程式分發？",
     "articles.item1.desc": "了解企業分發的用途與常見情境。",
+    "articles.item2.title": "下載與安裝安全指南（Android / iOS）",
+    "articles.item2.desc": "常見風險與安全檢查清單，降低安裝風險。",
+    "articles.item3.title": "常見問題（FAQ）",
+    "articles.item3.desc": "下載、安裝、連線與安全常見疑問整理。",
     "articles.read": "閱讀文章",
 
     "faq.title": "常見問題（FAQ）",

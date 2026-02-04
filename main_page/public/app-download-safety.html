@@ -2,9 +2,9 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0; url=/how-to-use.html#download-safety" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n-key="meta_title_safety">Download Safety Guide - MyCowBay</title>
+    <title data-i18n-key="meta_title_safety">下載與安裝安全指南 - MyCowBay</title>
+    <meta name="description" data-i18n-key="meta_description_safety" content="" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/i18n.js" defer></script>
@@ -12,12 +12,90 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7917094283509830" crossorigin="anonymous"></script>
   </head>
   <body>
+    <header class="top-nav">
+      <div class="container">
+        <a href="/" class="brand">
+          <img class="brand-icon" src="/images/icon.png" alt="MyCowBay icon" />
+          <span class="brand-name">MyCowBay</span>
+        </a>
+        <nav>
+          <a href="/" data-i18n-key="nav_home">Home</a>
+          <a href="/how-to-use.html" data-i18n-key="nav_how_to_use">How to Use</a>
+          <a href="/app-distribution-faq.html" data-i18n-key="nav_faq">FAQ</a>
+          <a href="/articles.html" data-i18n-key="nav_articles">Articles</a>
+          <a href="/plan.html" data-i18n-key="nav_plan">Plan</a>
+          <div class="dropdown">
+            <a href="javascript:void(0)" class="dropbtn" data-i18n-key="nav_policy">Policy</a>
+            <div class="dropdown-content">
+              <a href="/privacy-policy.html" data-i18n-key="nav_privacy_policy">Privacy Policy</a>
+              <a href="/terms-of-service.html" data-i18n-key="nav_terms_of_service">Terms of Service</a>
+            </div>
+          </div>
+          <a href="/contact-us.html" data-i18n-key="nav_contact">Contact Us</a>
+        </nav>
+      </div>
+    </header>
+
     <main class="container content-page">
       <section class="hero">
-        <h1 data-i18n-key="safety.title"></h1>
-        <p data-i18n-key="safety.redirect"></p>
-        <p><a href="/how-to-use.html#download-safety" data-i18n-key="safety.redirect_link"></a></p>
+        <h1 data-i18n-key="safety.title">下載與安裝安全指南（Android / iOS）</h1>
+        <p data-i18n-key="safety.subtitle">在下載 APK／IPA 等應用安裝包時，最重要的是「確認來源」與「降低被竄改的風險」。本頁整理常見風險與實務建議，協助使用者更安全地完成安裝。</p>
+      </section>
+
+      <section>
+        <h2 data-i18n-key="safety.risks.title">常見風險有哪些？</h2>
+        <ul>
+          <li data-i18n-key="safety.risks.li1">釣魚與仿冒頁面：下載頁長得很像官方，但實際下載到的是惡意檔案。</li>
+          <li data-i18n-key="safety.risks.li2">傳輸被攔截：若不是 HTTPS，可能遭到中間人攻擊或注入其他內容。</li>
+          <li data-i18n-key="safety.risks.li3">重新打包（Repack）：原本正常的 App 被插入惡意程式後重新封裝。</li>
+          <li data-i18n-key="safety.risks.li4">過度權限：App 要求不合理的權限（例如手機簡訊或通訊錄）。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 data-i18n-key="safety.checklist.title">安全下載的 8 個檢查清單</h2>
+        <ol>
+          <li data-i18n-key="safety.checklist.li1">確認網址：檢查網址拼字是否正確，避免相似字元（例如 0 / O、1 / l）。</li>
+          <li data-i18n-key="safety.checklist.li2">確認 HTTPS：瀏覽器網址列應顯示安全連線（https://）。</li>
+          <li data-i18n-key="safety.checklist.li3">避免不明短網址：短網址容易隱藏真實目的地，建議展開前或確認來源。</li>
+          <li data-i18n-key="safety.checklist.li4">核對版本資訊：版本號、更新日期、大小是否合理。</li>
+          <li data-i18n-key="safety.checklist.li5">核對檔案雜湊（如提供）：比對 SHA‑256 可大幅降低被竄改風險。</li>
+          <li data-i18n-key="safety.checklist.li6">留意權限需求：安裝後檢查 App 申請權限是否符合用途。</li>
+          <li data-i18n-key="safety.checklist.li7">保持系統更新：安全更新可降低已知漏洞被利用的可能性。</li>
+          <li data-i18n-key="safety.checklist.li8">安裝後觀察：若出現異常跳廣告、耗電異常、背景自動安裝等，立即移除並掃描。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2 data-i18n-key="safety.android.title">Android 安裝注意事項</h2>
+        <ul>
+          <li data-i18n-key="safety.android.li1">系統可能提示「安裝未知來源」或「此應用可能有風險」。這通常與裝置品牌/安全策略有關。</li>
+          <li data-i18n-key="safety.android.li2">建議：僅允許你信任的來源，安裝後關閉「允許未知來源」權限。</li>
+          <li data-i18n-key="safety.android.li3">若你是企業使用情境，建議採用 MDM 或內部管理方式統一控管。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 data-i18n-key="safety.ios.title">iOS 安裝注意事項</h2>
+        <ul>
+          <li data-i18n-key="safety.ios.li1">iOS 的企業簽章/描述檔（Profile）有更嚴格的安全與驗證機制。</li>
+          <li data-i18n-key="safety.ios.li2">若安裝時需要「信任開發者」，請確保你清楚知道該開發者企業的來源。</li>
+          <li data-i18n-key="safety.ios.li3">在網路品質差或地區網路限制下，驗證流程可能會延遲或失敗，建議稍後再試或更換網路。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 data-i18n-key="safety.more.title">延伸閱讀</h2>
+        <p>
+          <a href="/what-is-app-distribution.html" data-i18n-key="safety.more.link">什麼是企業級應用程式分發？</a>
+        </p>
       </section>
     </main>
+
+    <footer>
+      <div class="container">
+        <p data-i18n-key="footer_text">© 2026 MyCowBay. All rights reserved.</p>
+      </div>
+    </footer>
   </body>
 </html>
