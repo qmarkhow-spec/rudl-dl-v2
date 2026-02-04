@@ -18,6 +18,8 @@
     "nav_policy": "Policy",
     "nav_privacy_policy": "Privacy Policy",
     "nav_terms_of_service": "Terms of Service",
+    "nav_faq": "FAQ",
+    "nav_articles": "Articles",
 
     // Hero Section (Home)
     "hero_title": "Enterprise App Distribution & Operations Platform",
@@ -137,6 +139,15 @@
     "guide.faq.li1": "If Autofill fails, verify the file is correct.",
     "guide.faq.li2": "iOS install issues are usually untrusted certificates.",
     "guide.faq.li3": "Download page displays links; install metadata uses files.",
+    "guide.safety.title": "Download Safety Guide",
+    "guide.safety.desc": "Learn how to safely download and install APK / IPA.",
+
+    "articles.title": "Articles",
+    "articles.subtitle": "Knowledge base, distribution guides, and best practices.",
+    "articles.desc": "MyCowBay articles and resources.",
+    "articles.item1.title": "What is App Distribution?",
+    "articles.item1.desc": "Understand common enterprise distribution scenarios.",
+    "articles.read": "Read article",
 
     // Privacy Policy
     "privacy.title": "Privacy Policy",
@@ -219,6 +230,8 @@
     "nav_policy": "政策",
     "nav_privacy_policy": "隱私權政策",
     "nav_terms_of_service": "服務條款",
+    "nav_faq": "FAQ",
+    "nav_articles": "文章",
 
     // Hero Section (Home)
     "hero_title": "企業級應用分發與營運平台",
@@ -338,6 +351,15 @@
     "guide.faq.li1": "Autofill 若解析失敗，請確認檔案是否正確。",
     "guide.faq.li2": "iOS 無法安裝多半是憑證未信任。",
     "guide.faq.li3": "下載頁顯示資料取自 links，安裝 metadata 取自 files。",
+    "guide.safety.title": "下載安全指南",
+    "guide.safety.desc": "以下內容說明如何安全下載與安裝 APK / IPA。",
+
+    "articles.title": "文章",
+    "articles.subtitle": "平台知識、分發指南與最佳實務。",
+    "articles.desc": "MyCowBay 文章與資源",
+    "articles.item1.title": "什麼是 App 分發？",
+    "articles.item1.desc": "了解企業內部分發的用途與常見情境。",
+    "articles.read": "閱讀文章",
 
     // Privacy Policy
     "privacy.title": "隱私權政策（Privacy Policy）",
